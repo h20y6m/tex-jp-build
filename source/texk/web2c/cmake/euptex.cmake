@@ -130,12 +130,16 @@ add_custom_command(
     euptex euptex-pool.c
   )
 
+set_target_properties(euptex PROPERTIES OUTPUT_NAME euptex-beta)
+
 if(WIN32)
   add_executable(calldll_euptex "cmake/calldll.c")
   target_compile_definitions(calldll_euptex PRIVATE DLLPROC=dlleuptexmain)
   target_link_libraries(calldll_euptex euptex)
 
-  foreach(name euptex uplatex uplatex-dev)
+  set_target_properties(calldll_euptex PROPERTIES OUTPUT_NAME calldll_euptex-beta)
+
+  foreach(name euptex-beta uplatex-beta uplatex-beta-dev)
     add_custom_command(TARGET calldll_euptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_euptex>"

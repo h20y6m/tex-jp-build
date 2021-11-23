@@ -1,7 +1,7 @@
 ## 
 
 if(WIN32)
-  option(NO_KPSE_DLL "NO_KPSE_DLL" OFF)
+  option(NO_KPSE_DLL "NO_KPSE_DLL" ON)
 endif()
 
 option(MAKE_OMEGA_OCP_BY_DEFAULT "Run mkocp if OCP file is missing." OFF)

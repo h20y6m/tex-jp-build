@@ -121,12 +121,16 @@ add_custom_command(
     ptex ptex-pool.c
   )
 
+set_target_properties(ptex PROPERTIES OUTPUT_NAME ptex-beta)
+
 if(WIN32)
   add_executable(calldll_ptex "cmake/calldll.c")
   target_compile_definitions(calldll_ptex PRIVATE DLLPROC=dllptexmain)
   target_link_libraries(calldll_ptex ptex)
 
-  foreach(name ptex)
+  set_target_properties(calldll_ptex PROPERTIES OUTPUT_NAME calldll_ptex-beta)
+
+  foreach(name ptex-beta)
     add_custom_command(TARGET calldll_ptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_ptex>"

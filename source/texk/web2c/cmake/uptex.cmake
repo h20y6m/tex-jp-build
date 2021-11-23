@@ -130,13 +130,16 @@ add_custom_command(
     "${CMAKE_CURRENT_SOURCE_DIR}/uptexdir/uptex-m.ch"
   )
 
+set_target_properties(uptex PROPERTIES OUTPUT_NAME uptex-beta)
 
 if(WIN32)
   add_executable(calldll_uptex "cmake/calldll.c")
   target_compile_definitions(calldll_uptex PRIVATE DLLPROC=dlluptexmain)
   target_link_libraries(calldll_uptex uptex)
 
-  foreach(name uptex)
+  set_target_properties(calldll_uptex PROPERTIES OUTPUT_NAME calldll_uptex-beta)
+
+  foreach(name uptex-beta)
     add_custom_command(TARGET calldll_uptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_uptex>"

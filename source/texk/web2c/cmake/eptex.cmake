@@ -119,12 +119,16 @@ add_custom_command(
     eptex eptex-pool.c
   )
 
+set_target_properties(eptex PROPERTIES OUTPUT_NAME eptex-beta)
+
 if(WIN32)
   add_executable(calldll_eptex "cmake/calldll.c")
   target_compile_definitions(calldll_eptex PRIVATE DLLPROC=dlleptexmain)
   target_link_libraries(calldll_eptex eptex)
 
-  foreach(name eptex platex platex-dev)
+  set_target_properties(calldll_eptex PROPERTIES OUTPUT_NAME calldll_eptex-beta)
+
+  foreach(name eptex-beta platex-beta platex-beta-dev)
     add_custom_command(TARGET calldll_eptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_eptex>"

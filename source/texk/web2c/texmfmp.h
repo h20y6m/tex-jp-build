@@ -63,19 +63,19 @@ typedef void* voidpointer;
 #define TEXMFENGINENAME "aleph"
 #elif defined (pTeX)
 #define TEXMFPOOLNAME "ptex.pool"
-#define TEXMFENGINENAME "ptex"
+#define TEXMFENGINENAME "ptex-beta"
 #include "ptexdir/kanji.h"
 #elif defined (epTeX)
 #define TEXMFPOOLNAME "eptex.pool"
-#define TEXMFENGINENAME "eptex"
+#define TEXMFENGINENAME "eptex-beta"
 #include "ptexdir/kanji.h"
 #elif defined (upTeX)
 #define TEXMFPOOLNAME "uptex.pool"
-#define TEXMFENGINENAME "uptex"
+#define TEXMFENGINENAME "uptex-beta"
 #include "uptexdir/kanji.h"
 #elif defined (eupTeX)
 #define TEXMFPOOLNAME "euptex.pool"
-#define TEXMFENGINENAME "euptex"
+#define TEXMFENGINENAME "euptex-beta"
 #include "uptexdir/kanji.h"
 #else
 #define TEXMFPOOLNAME "tex.pool"
