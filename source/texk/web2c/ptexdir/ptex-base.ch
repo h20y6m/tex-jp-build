@@ -7228,6 +7228,7 @@ if s<>null then
 end;
 
 @ @<Seek list and make |t| pointing widow penalty position@>=
+k:=0;
 while(p<>null) do
 begin if is_char_node(p) then
   begin if font_dir[font(p)]<>dir_default then

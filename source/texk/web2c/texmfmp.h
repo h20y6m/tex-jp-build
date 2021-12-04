@@ -67,7 +67,7 @@ typedef void* voidpointer;
 #include "ptexdir/kanji.h"
 #elif defined (epTeX)
 #define TEXMFPOOLNAME "eptex.pool"
-#define TEXMFENGINENAME "eptex"
+#define TEXMFENGINENAME "eptex-dvipdfmx"
 #include "ptexdir/kanji.h"
 #elif defined (upTeX)
 #define TEXMFPOOLNAME "uptex.pool"
@@ -75,7 +75,7 @@ typedef void* voidpointer;
 #include "uptexdir/kanji.h"
 #elif defined (eupTeX)
 #define TEXMFPOOLNAME "euptex.pool"
-#define TEXMFENGINENAME "euptex"
+#define TEXMFENGINENAME "euptex-dvipdfmx"
 #include "uptexdir/kanji.h"
 #else
 #define TEXMFPOOLNAME "tex.pool"
@@ -307,6 +307,10 @@ extern void blankrectangle (/*screencol, screencol, screenrow, screenrow*/);
 extern void paintrow (/*screenrow, pixelcolor, transspec, screencol*/);
 #endif
 #endif /* MF */
+
+#if defined(epTeX) || defined(eupTeX)
+extern integer rundvipdfmx (integer dviname);
+#endif /* epTeX or eupTeX */
 
 
 /* (Un)dumping.  These are called from the change file.  */

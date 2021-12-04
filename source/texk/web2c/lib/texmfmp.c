@@ -777,6 +777,10 @@ maininit (int ac, string *av)
   synctexoption = SYNCTEX_NO_OPTION;
 #endif
 
+#if defined(epTeX) || defined(eupTeX)
+  dvipdfmx = 1;
+#endif /* epTeX or eupTeX */
+
 #if IS_pTeX
   kpse_set_program_name (argv[0], NULL);
   initkanji ();
@@ -1802,6 +1806,9 @@ static struct option long_options[]
       { "kanji",                     1, 0, 0 },
       { "kanji-internal",            1, 0, 0 },
 #endif /* IS_pTeX */
+#if defined(epTeX) || defined(eupTeX)
+      { "dvipdfmx",                  1, 0, 0 },
+#endif /* epTeX or eupTeX */
       { 0, 0, 0, 0 } };
 
 static void
@@ -1987,6 +1994,11 @@ parse_options (int argc, string *argv)
         versions = NULL;
 #endif
         printversionandexit (BANNER, COPYRIGHT_HOLDER, AUTHOR, versions);
+
+#if defined(epTeX) || defined(eupTeX)
+    } else if (ARGUMENT_IS ("dvipdfmx")) {
+      dvipdfmx = (int) strtol(optarg, NULL, 0);
+#endif /* epTeX or eupTeX */
 
     } /* Else it was a flag; getopt has already done the assignment.  */
   }
@@ -4120,3 +4132,102 @@ paintrow (screenrow row, pixelcolor init_color,
     (*mfwp->mfwsw_paintrow) (row, init_color, transition_vector, vector_size);
 }
 #endif /* MF */
+
+
+#if defined(epTeX) || defined(eupTeX)
+#ifndef WIN32
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
+integer
+rundvipdfmx (strnumber dviname_num)
+{
+  int ret;
+  int argc = 0;
+  char *argv[5];
+  char *cmdname = xstrdup("dvipdfmx");
+  char *dviname = gettexstring(dviname_num);
+  char *pdfname = NULL;
+
+#ifdef WIN32
+  {
+    char *bindir = kpse_var_value ("SELFAUTOLOC");
+    if (bindir) {
+      char *p = concat3 (bindir, "/", cmdname);
+      free (bindir);
+      free (cmdname);
+      cmdname = p;
+    }
+  }
+#endif
+
+#if defined(epTeX) && !defined(WIN32)
+  {
+    char *p = ptenc_from_internal_enc_string_to_utf8(dviname);
+    if (p) {
+      free (dviname);
+      dviname = p;
+    }
+  }
+#endif
+
+  if ((strchr(dviname, '/')
+#ifdef WIN32
+        || strchr(dviname, '\\')
+#endif
+      ) && (strlen(dviname) >= 4
+        && FILESTRCASEEQ(dviname + strlen(dviname) - 4, ".dvi"))) {
+    pdfname = xstrdup(dviname);
+    strcpy(pdfname + strlen(pdfname) - 4, ".pdf");
+  }
+
+  argv[argc++] = cmdname;
+  if (pdfname) {
+    argv[argc++] = "-o";
+    argv[argc++] = pdfname;
+  }
+  argv[argc++] = dviname;
+  argv[argc++] = NULL;
+
+#ifdef WIN32
+  {
+    int i;
+    for (i = 0; argv[i] != NULL; i++) {
+      argv[i] = concat3 ("\"", argv[i], "\"");
+    }
+
+    ret = fsyscp_spawnvp(_P_WAIT, cmdname, argv);
+
+    for (i = 0; argv[i] != NULL; i++) {
+      free (argv[i]);
+    }
+  }
+#else
+  {
+    pid_t pid = fork();
+    if (pid == -1) {
+      ret = -1;
+    } else if (pid == 0) {
+      execvp(cmdname, argv);
+      _exit(-1);
+    } else {
+      int status;
+      if (waitpid(pid, &status, 0) == pid && WIFEXITED(status)) {
+        ret = WEXITSTATUS(status);
+        if (ret == 255)
+          ret = -1;
+      } else {
+        ret = -1;
+      }
+    }
+  }
+#endif
+
+  free(cmdname);
+  free(dviname);
+  if (pdfname) free(pdfname);
+
+  return ret;
+}
+#endif /* epTeX or eupTeX */

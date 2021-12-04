@@ -87,6 +87,7 @@ set(euptex_ch_srcs
   eptexdir/fam256.ch
   euptexdir/pdfstrcmp-eup-pre.ch
   eptexdir/pdfutils.ch
+  eptexdir/dvipdfmx.ch
   euptexdir/pdfstrcmp-eup-post.ch
   eptexdir/char-warning-eptex.ch
   tex-binpool.ch
@@ -130,12 +131,16 @@ add_custom_command(
     euptex euptex-pool.c
   )
 
+set_target_properties(euptex PROPERTIES OUTPUT_NAME euptex-dvipdfmx)
+
 if(WIN32)
   add_executable(calldll_euptex "cmake/calldll.c")
   target_compile_definitions(calldll_euptex PRIVATE DLLPROC=dlleuptexmain)
   target_link_libraries(calldll_euptex euptex)
 
-  foreach(name euptex uplatex uplatex-dev)
+  set_target_properties(calldll_euptex PROPERTIES OUTPUT_NAME calldll_euptex-dvipdfmx)
+
+  foreach(name euptex-dvipdfmx uplatex-dvipdfmx uplatex-dvipdfmx-dev)
     add_custom_command(TARGET calldll_euptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_euptex>"

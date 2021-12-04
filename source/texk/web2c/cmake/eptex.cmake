@@ -78,6 +78,7 @@ set(eptex_ch_srcs
   ${eptex_ch_synctex}
   eptexdir/fam256.ch
   eptexdir/pdfutils.ch
+  eptexdir/dvipdfmx.ch
   eptexdir/char-warning-eptex.ch
   tex-binpool.ch
   )
@@ -119,12 +120,16 @@ add_custom_command(
     eptex eptex-pool.c
   )
 
+set_target_properties(eptex PROPERTIES OUTPUT_NAME eptex-dvipdfmx)
+
 if(WIN32)
   add_executable(calldll_eptex "cmake/calldll.c")
   target_compile_definitions(calldll_eptex PRIVATE DLLPROC=dlleptexmain)
   target_link_libraries(calldll_eptex eptex)
 
-  foreach(name eptex platex platex-dev)
+  set_target_properties(calldll_eptex PROPERTIES OUTPUT_NAME calldll_eptex-dvipdfmx)
+
+  foreach(name eptex-dvipdfmx platex-dvipdfmx platex-dvipdfmx-dev)
     add_custom_command(TARGET calldll_eptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_eptex>"
