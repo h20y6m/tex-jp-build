@@ -305,7 +305,13 @@ texmf_shell_scripts = \
 	texlive-extra/texconfig.sh \
 	texlive-extra/texlinks.sh \
 	texlive-extra/xetex-unsafe.sh \
-	texlive-extra/xelatex-unsafe.sh
+	texlive-extra/xelatex-unsafe.sh \
+	texosquery/texosquery.sh \
+	texosquery/texosquery-jre5.sh \
+	texosquery/texosquery-jre8.sh \
+	tikztosvg/tikztosvg \
+	typeoutfileinfo/typeoutfileinfo.sh \
+	wordcount/wordcount.sh
 
 texmf_other_scripts = \
 	a2ping/a2ping.pl \
@@ -378,6 +384,7 @@ texmf_other_scripts = \
 	lilyglyphs/lily-image-commands.py \
 	lilyglyphs/lily-rebuild-pdfs.py \
 	ltximg/ltximg.pl \
+	luafindfont/luafindfont.lua \
 	luaotfload/luaotfload-tool.lua \
 	lwarp/lwarpmk.lua \
 	m-tx/m-tx.lua \
@@ -734,12 +741,6 @@ scripts-list: Makefile
 
 installdirs-local:
 	$(MKDIR_P) $(DESTDIR)$(bindir)
-	texosquery/texosquery.sh \
-	texosquery/texosquery-jre5.sh \
-	texosquery/texosquery-jre8.sh \
-	tikztosvg/tikztosvg \
-	typeoutfileinfo/typeoutfileinfo.sh \
-	wordcount/wordcount.sh
 install-data-hook: installdirs-local
 @WIN32_TRUE@	@for s in $(texmf_other_scripts); do \
 @WIN32_TRUE@	  t=`basename $$s | sed 's,\.[^/]*$$,,' | tr '[A-Z]' '[a-z]'`; \
