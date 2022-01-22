@@ -17,16 +17,16 @@
 @q Please send comments, suggestions, etc. to tex-k@@tug.org.            @>
 
 @x
-\def\title{Common code for CTANGLE and CWEAVE (Version 4.5)}
+\def\title{Common code for CTANGLE and CWEAVE (Version 4.6)}
 @y
 \def\Kpathsea/{{\mc KPATHSEA\spacefactor1000}} \ifacro\sanitizecommand\Kpathsea{KPATHSEA}\fi
-\def\title{Common code for CTANGLE and CWEAVE (4.5 [\TeX~Live])}
+\def\title{Common code for CTANGLE and CWEAVE (4.6 [\TeX~Live])}
 @z
 
 @x
-  \centerline{(Version 4.5)}
+  \centerline{(Version 4.6)}
 @y
-  \centerline{(Version 4.5 [\TeX~Live])}
+  \centerline{(Version 4.6 [\TeX~Live])}
 @z
 
 @x
@@ -203,7 +203,7 @@ stop reading it and start reading from the named include file.  The
 \.{@@i} line should give a complete file name with or without
 double quotes.
 The actual file lookup is done with the help of the \Kpathsea/ library;
-see section~\X91:File lookup with \Kpathsea/\X~for details. % FIXME
+see section~\X93:File lookup with \Kpathsea/\X~for details. % FIXME
 The remainder of the \.{@@i} line after the file name is ignored.
 @^system dependencies@> @.CWEBINPUTS@>
 @z

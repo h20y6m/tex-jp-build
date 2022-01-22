@@ -1,6 +1,6 @@
 # CMakeLists.txt for dvipdfm-x
 
-set(VERSION "20210609")
+set(VERSION "20211117")
 
 include(cmake/config.cmake)
 
@@ -161,7 +161,7 @@ set(xdvipdfmx_SOURCES
   xbb.c
   )
 
-set(xdvipdfmx_SOURCES ${xdvipdfmx_SOURCES} config.h)
+set(xdvipdfmx_SOURCES ${xdvipdfmx_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 if(WIN32)
   add_library(xdvipdfmx SHARED ${xdvipdfmx_SOURCES})
