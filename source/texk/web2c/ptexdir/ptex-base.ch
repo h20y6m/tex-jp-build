@@ -133,8 +133,8 @@ for i:=@'177 to @'777 do xchr[i]:=i;
 @<Glob...@>=
 @!buffer:^ASCII_code; {lines of characters being read}
 @y
-In \pTeX, we use another array |buffer2[]| to indicate which byte 
-is a part of a Japanese character. 
+In \pTeX, we use another array |buffer2[]| to indicate which byte
+is a part of a Japanese character.
 |buffer2[]| is initialized to zero in reading one line from a file
 (|input_ln|). |buffer2[i]| is set to one when |buffer[i]| is known
 to be a part of a Japanese character, in |get_next| routine.
@@ -393,8 +393,8 @@ else begin i:=str_start[s]; l:=str_start[s+1];
 end;
 
 procedure print_quoted(@!s:integer);
-  {prints string |s| which represents filename, 
-  omitting quotes and with code covversion}
+  {prints string |s| which represents filename,
+   omitting quotes and with code conversion}
 var i,l:pool_pointer; j,p:integer;
 begin if s<>0 then begin
   i:=str_start[s]; l:=str_start[s+1];
@@ -1427,7 +1427,7 @@ if n<math_code_base then
 @d holding_inserts_code=54 {do not remove insertion nodes from \.{\\box255}}
 @d error_context_lines_code=55 {maximum intermediate line pairs shown}
 @d jchr_widow_penalty_code=56
-			{penalty for creating a widow KANJI character line}
+            {penalty for creating a widow KANJI character line}
 @d text_baseline_shift_factor_code=57
 @d script_baseline_shift_factor_code=58
 @d scriptscript_baseline_shift_factor_code=59
@@ -1735,7 +1735,7 @@ var old_setting:0..max_selector; {saved |selector| setting}
 @d set_trick_count==
   begin first_count:=tally;
   if (first_count>0)and(trick_buf2[(first_count-1)mod error_line]=1) then
-      incr(first_count);
+    incr(first_count);
   trick_count:=first_count+1+error_line-half_error_line;
   if trick_count<error_line then trick_count:=error_line;
   end
@@ -1770,7 +1770,7 @@ if j>0 then begin
       if buffer2[i]>0 then
         print_char(@"100*buffer2[i]+buffer[i]) else print(buffer[i]);
         set_trick_count; print_unread_buffer_with_ptenc(loc,j);
-	end
+    end
   else
     for i:=start to j-1 do
       if buffer2[i]>0 then
@@ -3393,7 +3393,7 @@ continue:
       synch_h;
       end;
     p:=link(p);
-	jc:=toDVI(KANJI(info(p)));
+    jc:=toDVI(KANJI(info(p)));
     dvi_out(set2); dvi_out(Hi(jc)); dvi_out(Lo(jc));
     cur_h:=cur_h+char_width(f)(orig_char_info(f)(c)); {not |jc|}
     end;
@@ -3830,7 +3830,7 @@ internal kanji code number.
 @d math_kcode(#)==info(#+4) {the |kanji character| field of a noad}
 @d kcode_noad_nucleus(#)==#+3
 @d math_kcode_nucleus(#)==info(#+3)
-	{the |kanji character| field offset from nucleus}
+    {the |kanji character| field offset from nucleus}
 @#
 @d math_jchar=6
 @d math_text_jchar=7
@@ -3891,7 +3891,7 @@ begin print_esc("fam"); print_int(fam(p)); print_char(" ");
 print_ASCII(qo(character(p)));
 @y
 procedure print_fam_and_char(@!p:pointer;@!t:small_number);
-					{prints family and character}
+                    {prints family and character}
 var @!cx:KANJI_code; {temporary register for KANJI}
 begin print_esc("fam"); print_int(fam(p)); print_char(" ");
 if t=math_char then print_ASCII(qo(character(p)))
@@ -6673,6 +6673,27 @@ inhibit_glue_flag:=false;
 end
 @z
 
+@x
+@!d:integer; {number of characters in incomplete current string}
+@y
+@!k:integer; {loop indices}
+@!d:integer; {number of characters in incomplete current string}
+@z
+
+@x
+  for d:=0 to cur_length-1 do
+    begin {|print| gives up if passed |str_ptr|, so do it by hand.}
+    print(so(str_pool[str_start[str_ptr]+d])); {N.B.: not |print_char|}
+    end;
+@y
+  for d:=0 to cur_length-1 do
+    begin {|print| gives up if passed |str_ptr|, so do it by hand.}
+    if so(str_pool[str_start[str_ptr]+d])>=@"100 then
+    print_char(so(str_pool[str_start[str_ptr]+d]))
+    else print(so(str_pool[str_start[str_ptr]+d])); {N.B.: not |print_char|}
+    end;
+@z
+
 @x [53.????] ignore "flag bit" in str_pool for system(3)
       runsystem_ret := runsystem(conststringcast(addressof(
                                               str_pool[str_start[str_ptr]])));
@@ -6748,9 +6769,9 @@ for k:=256 to 511 do xchr[k]:=k;
 @y
   for i:=str_start[s] to str_start[s+1]-1 do
     if str_pool[i]>=@"100 then
-	  begin str_room(1); append_char(str_pool[i]);
-	  end
-	else
+      begin str_room(1); append_char(str_pool[i]);
+      end
+    else
       dummy := more_name(str_pool[i]); {add each read character to the current file name}
 @z
 
@@ -6857,8 +6878,8 @@ begin k:=0;
   until n=0;
   begin while k>0 do
     begin decr(k);
-	cx:=kansuji_char(dig[k]);
-	print_kanji(fromDVI(cx));
+    cx:=kansuji_char(dig[k]);
+    print_kanji(fromDVI(cx));
     end;
   end;
 end;
@@ -6973,7 +6994,7 @@ if is_char_kanji(n) then
   if (j<>no_entry)and(cur_val>inhibit_after) then
     begin if global or(cur_level=level_one) then cur_val:=inhibit_unused
       { remove the entry from inhibit table }
-	else cur_val:=inhibit_none; end
+    else cur_val:=inhibit_none; end
   else if j=no_entry then
     begin print_err("Inhibit table is full!!");
     help1("I'm skipping this control sequences.");@/
@@ -7242,7 +7263,7 @@ while p<>null do
     if subtype(p)=acc_kern then
       begin p:=link(p);
         if is_char_node(p) then
-	  if font_dir[font(p)]<>dir_default then p:=link(p);
+          if font_dir[font(p)]<>dir_default then p:=link(p);
         p:=link(link(p));
         if find_first_char then
           begin find_first_char:=false; first_char:=p;
@@ -7337,7 +7358,7 @@ while p<>null do
           if is_char_node(t) then
             if font_dir[font(t)]<>dir_default then t:=link(t);
           p:=link(link(t));
-	  if font_dir[font(p)]<>dir_default then
+          if font_dir[font(p)]<>dir_default then
             begin p:=link(p); insert_skip:=after_wchar; end
           else  insert_skip:=after_schar;
           end
@@ -7674,8 +7695,8 @@ main_loop_j+1: space_factor:=1000;
     begin if not disp_called then
       begin prev_node:=tail; tail_append(get_node(small_node_size));
       type(tail):=disp_node; disp_dimen(tail):=0; disp_called:=true
-	  end;
-	fast_get_avail(main_p); font(main_p):=main_f; character(main_p):=cur_l;
+      end;
+    fast_get_avail(main_p); font(main_p):=main_f; character(main_p):=cur_l;
     link(tail):=main_p; tail:=main_p; last_jchr:=tail;
     fast_get_avail(main_p); info(main_p):=KANJI(cur_chr);
     link(tail):=main_p; tail:=main_p;
@@ -7741,7 +7762,7 @@ else
   if disp<>0 or not disp_called then
     begin prev_node:=tail; tail_append(get_node(small_node_size));
     type(tail):=disp_node; disp_dimen(tail):=disp; prev_disp:=disp;
-	disp_called:=true
+    disp_called:=true
     end;
 end;
 
@@ -7865,7 +7886,7 @@ begin
     p:=multistrlen(ustringcast(buffer), l, i);
     if p<>1 then
       begin for j:=i to i+p-1 do
-	    print_char(@"100+buffer[j]);
+        print_char(@"100+buffer[j]);
       i:=i+p; end
     else begin print(buffer[i]); incr(i); end;
   end;
