@@ -2857,11 +2857,22 @@ if #<>0 then
   if k<=file_name_size then name_of_file[k]:=xchr[c];
   end end
 @y
-@d append_to_name(#)==begin if (#)>=@"100 then c:=(#)-@"100 else c:=#;
-  { Since the type of |c| is |ASCII_code|, above if-statement might not be needed }
-  if not (c="""") then begin incr(k);
-  if k<=file_name_size then name_of_file[k]:=xchr[c];
-  end end
+@d append_to_name_char(#)==begin incr(k);
+  if k<=file_name_size then name_of_file[k]:=xchr[#];
+  end
+
+@d append_to_name(#)==begin
+  if (#)>=@"100 then begin
+    c:=(#)-@"100;
+    append_to_name_char(c);
+  end else begin
+    c:=#;
+    if (c>=@"80) and (not isinternalUPTEX) and isterminalUTF8 then
+      append_to_name_char("?")
+    else if not (c="""") then
+      append_to_name_char(c);
+  end
+end
 @z
 
 @x [29.526] l.10668 - pTeX: scan file name
