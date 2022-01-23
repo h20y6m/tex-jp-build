@@ -1,6 +1,6 @@
 # CMakeLists.txt for ptexenc
 
-set(PTEXENC_VERSION "1.3.11/dev")
+set(PTEXENC_VERSION "1.4.0")
 
 option(NO_PTENC_DLL "NO_PTENC_DLL" ON)
 option(KANJI_ICONV "use iconv for kanji <=> unicode conversion." OFF)

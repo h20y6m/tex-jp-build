@@ -3112,7 +3112,7 @@ getjobname(strnumber name)
     while (i<l)
      {
         p = multistrlenshort(strpool, l, i);
-        if (p>1) 
+        if (p>1)
              for (int j=i+p; i<j; i++) strpool[i] = (0xFF&strpool[i])+0x100;
         else i++;
      }
@@ -3615,7 +3615,7 @@ getfiledump(integer s, int offset, int length)
 #else
     poolpointer data_ptr;
     poolpointer data_end;
-#endif /* XeTeX */
+#endif /* XeTeX || IS_pTeX */
     char *file_name;
 
     if (length == 0) {
