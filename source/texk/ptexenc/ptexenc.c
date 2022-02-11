@@ -222,6 +222,15 @@ boolean is_internalUPTEX(void)
     return (internal_enc == ENC_UPTEX);
 }
 
+boolean is_terminalUTF8(void)
+{
+#ifdef WIN32
+    return false;
+#else
+    get_terminal_enc(); return (terminal_enc == ENC_UTF8);
+#endif
+}
+
 
 /* check char range */
 boolean ismultichr (int length, int nth, int c)
@@ -331,9 +340,10 @@ long fromBUFF(unsigned char *s, int len, int pos)
 
 long fromBUFFshort(unsigned short *s, int len, int pos)
 {
+    int i;
     unsigned char sc[6];
     s += pos; len -= pos;
-    for (int i=0;i<(len<6 ? len : 6);i++) sc[i]=0xFF&s[i];
+    for (i=0;i<(len<6 ? len : 6);i++) sc[i]=0xFF&s[i];
     return fromBUFF(sc, (len<6 ? len : 6), 0);
 }
 
