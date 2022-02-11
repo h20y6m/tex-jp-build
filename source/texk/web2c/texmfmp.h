@@ -268,10 +268,18 @@ extern void topenin (void);
 #ifdef FMT_COMPRESS
 /* f is declared as gzFile, but we temporarily use it for a FILE *
    so that we can use the standard open calls */
+#if defined(_MSC_VER)
 #define wopenin(f)	gz_wopenin(&(f))
 #define wopenout(f)	gz_wopenout(&(f))
 extern boolean gz_wopenin(gzFile *f);
 extern boolean gz_wopenout(gzFile *f);
+#else
+#define wopenin(f)	(open_input ((FILE**)&(f), DUMP_FORMAT, FOPEN_RBIN_MODE) \
+						&& (f = gzdopen(fileno((FILE*)f), FOPEN_RBIN_MODE)))
+#define wopenout(f)	(open_output ((FILE**)&(f), FOPEN_WBIN_MODE) \
+						&& (f = gzdopen(fileno((FILE*)f), FOPEN_WBIN_MODE)) \
+						&& (gzsetparams(f, 1, Z_DEFAULT_STRATEGY) == Z_OK))
+#endif
 #define wclose(f)	gzclose(f)
 #else
 #define wopenin(f)	open_input (&(f), DUMP_FORMAT, FOPEN_RBIN_MODE)

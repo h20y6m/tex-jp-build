@@ -2201,6 +2201,7 @@ open_in_or_pipe (FILE **f_ptr, int filefmt, const_string fopen_mode)
 }
 
 #ifdef FMT_COMPRESS
+#if defined(_MSC_VER)
 boolean
 gz_wopenin(gzFile *f)
 {
@@ -2226,6 +2227,7 @@ gz_wopenout(gzFile *f)
 	*f = gzdopen(fd, FOPEN_WBIN_MODE);
 	return (*f != NULL) && (gzsetparams(*f, 1, Z_DEFAULT_STRATEGY) == Z_OK);
 }
+#endif
 #endif
 
 #ifdef XeTeX
