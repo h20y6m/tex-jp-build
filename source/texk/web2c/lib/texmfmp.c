@@ -802,12 +802,37 @@ maininit (int ac, string *av)
 #if (defined(XeTeX) || defined(pdfTeX)) && defined(WIN32)
   kpse_set_program_name (argv[0], NULL);
 #endif
+
+#if IS_pTeX
+  /* Determine the internal kanji encoding here
+     before parsing the command line. */
+  {
+    int n;
+    for (n = 1; n < ac; n++) {
+      if (!strncasecmp (av[n], "-kanji-internal=", 16)) {
+        set_enc_string (NULL, av[n] + 16);
+      }
+      if (!strncasecmp (av[n], "--kanji-internal=", 17)) {
+        set_enc_string (NULL, av[n] + 17);
+      }
+      if (n < ac - 1 &&
+          (!strcasecmp (av[n], "-kanji-internal") ||
+           !strcasecmp (av[n], "--kanji-internal"))) {
+        set_enc_string (NULL, av[n+1]);
+      }
+    }
+  }
+#endif
+
 #if (IS_upTeX || defined(XeTeX) || defined(pdfTeX)) && defined(WIN32)
 /* 
    -cnf-line=command_line_encoding=value cannot give effect because
    command_line_encoding is read here before parsing the command
    line. So we add the following.
 */
+#if IS_upTeX
+  if (is_internalUPTEX())
+#endif
   { /* support old compilers which are incompatible with C99 */
     int n;
     for (n = 1; n < ac; n++) {
@@ -826,22 +851,20 @@ maininit (int ac, string *av)
         break;
       }
     }
+
+    enc = kpse_var_value("command_line_encoding");
+    get_command_line_args_utf8(enc, &argc, &argv);
   }
-  enc = kpse_var_value("command_line_encoding");
-  get_command_line_args_utf8(enc, &argc, &argv);
 #endif
-#if IS_pTeX && !IS_upTeX && !defined(WIN32)
-  ptenc_get_command_line_args(&argc, &argv);
+#if IS_pTeX && !defined(WIN32)
+  if (!is_internalUPTEX())
+    ptenc_get_command_line_args(&argc, &argv);
 #endif
 
   /* If the user says --help or --version, we need to notice early.  And
      since we want the --ini option, have to do it before getting into
      the web (which would read the base file, etc.).  */
-#if ((IS_upTeX || defined(XeTeX) || defined(pdfTeX)) && defined(WIN32)) || (IS_pTeX && !IS_upTeX && !defined(WIN32))
   parse_options (argc, argv);
-#else
-  parse_options (ac, av);
-#endif
 
 #if IS_pTeX || ((defined(XeTeX) || defined(pdfTeX)) && defined(WIN32))
   /* In pTeX and friends, or in WIN32, texmf.cnf is not recorded in
