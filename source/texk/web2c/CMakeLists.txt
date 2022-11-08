@@ -77,5 +77,8 @@ include(cmake/uptex.cmake)
 # e-upTeX
 include(cmake/euptex.cmake)
 
+# npTeX
+include(cmake/nptex.cmake)
+
 # libmd5
 include(cmake/md5.cmake)

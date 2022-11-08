@@ -47,7 +47,7 @@ def main():
     
     if basefile in ["bibtex", "pbibtex", "upbibtex"]:
         midcmd = cvtbib
-    elif basefile in ["mf", "mflua", "mfluajit", "tex", "aleph", "etex", "pdftex", "ptex", "eptex", "euptex", "uptex", "xetex"]:
+    elif basefile in ["mf", "mflua", "mfluajit", "tex", "aleph", "etex", "pdftex", "ptex", "eptex", "euptex", "uptex", "nptex", "xetex"]:
         if basefile.startswith("mf"):
             more_defines = [srcdir + "/web2c/texmf.defines", srcdir + "/web2c/mfmp.defines"]
             precmd = cvtmf1
@@ -80,7 +80,7 @@ def main():
 
         if basefile in ["bibtex", "pbibtex", "upbibtex"]:
             pass
-        elif basefile in ["mf", "mflua", "mfluajit", "tex", "aleph", "etex", "pdftex", "ptex", "eptex", "euptex", "uptex", "xetex"]:
+        elif basefile in ["mf", "mflua", "mfluajit", "tex", "aleph", "etex", "pdftex", "ptex", "eptex", "euptex", "uptex", "nptex", "xetex"]:
             with open(srcdir + "/web2c/coerce.h", "r") as i:
                 with open(basefile + "coerce.h", "a+") as o:
                     for line in i:
