@@ -65,7 +65,7 @@
 /* Aleph is sufficiently different to separate the definition. */
 /* pTeX, upTeX, e-pTeX and e-upTeX define max_quarterword=@"FFFF,
    so a similar memory structure is applicable. */
-#if !defined(Aleph) && !defined(pTeX) && !defined(epTeX) && !defined(eupTeX) && !defined(upTeX)
+#if !defined(Aleph) && !defined(pTeX) && !defined(epTeX) && !defined(eupTeX) && !defined(upTeX) && !defined(npTeX)
 
 typedef union
 {
@@ -259,4 +259,4 @@ typedef union
 
 #define gr gg.GLUE
 
-#endif /* Aleph || pTeX || epTeX || eupTeX || upTeX */
+#endif /* Aleph || pTeX || epTeX || eupTeX || upTeX || npTeX */
