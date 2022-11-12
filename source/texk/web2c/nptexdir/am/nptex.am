@@ -61,6 +61,7 @@ nptex.ch: tie$(EXEEXT) nptex.web $(nptex_ch_srcs)
 	$(tie_c) nptex.web $(nptex_ch_srcs)
 nptex_ch_srcs = \
 	nptexdir/nptex-base.ch \
+	nptexdir/pdfoutput.ch \
 	$(nptex_ch_synctex) \
 	eptexdir/char-warning-eptex.ch \
 	tex-binpool.ch

@@ -4701,6 +4701,7 @@ nptex_web_srcs = \
 
 nptex_ch_srcs = \
 	nptexdir/nptex-base.ch \
+	nptexdir/pdfoutput.ch \
 	$(nptex_ch_synctex) \
 	eptexdir/char-warning-eptex.ch \
 	tex-binpool.ch

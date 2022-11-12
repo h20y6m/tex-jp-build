@@ -1846,6 +1846,9 @@ static struct option long_options[]
       { "kanji",                     1, 0, 0 },
       { "kanji-internal",            1, 0, 0 },
 #endif /* IS_pTeX */
+#if defined (npTeX)
+      { "pdf",                       0, &pdfoutput, 1 },
+#endif /* npTeX */
       { 0, 0, 0, 0 } };
 
 static void
@@ -2367,6 +2370,143 @@ u_close_file_or_pipe (unicodefile* f)
 #endif
 
 #endif /* ENABLE_PIPES */
+
+#if defined(npTeX)
+
+static FILE *pdf_pipe = NULL;
+
+int
+pdf_open_out (FILE **f_ptr)
+{
+  int i, bs, err = 0;
+  FILE *f;
+  char *cmd, *fname, *p, *q;
+  const char *cmdname = "dvipdfmx";
+  const char *cmdopts = "-q -o ";
+  boolean absolute = kpse_absolute_p(nameoffile+1, false);
+
+  /* If we have an explicit output directory, use it. */
+  if (output_directory && !absolute) {
+    fname = concat3(output_directory, DIR_SEP_STRING, nameoffile + 1);
+  } else {
+    fname = nameoffile + 1;
+  }
+
+  cmd = xmalloc(strlen(cmdname) + strlen(cmdopts) + 4 * strlen(fname) + 4);
+  p = cmd;
+  for (q = cmdname; *q != '\0'; q++) *p++ = *q;
+#ifdef WIN32
+  {
+    /* Make the full path of dvipdfmx for security reasons.
+       I believe no one installs TeX to a path containing '%'. */
+    char *v = kpse_var_value ("SELFAUTOLOC");
+    if (v) {
+      free (cmd);
+      cmd = xmalloc(strlen(v) + 3 + strlen(cmdname) + strlen(cmdopts) + 4 * strlen(fname) + 4);
+      p = cmd;
+      *p++ = '"';
+      for (q = v; *q != '\0'; q++) *p++ = *q;
+      *p++ = '/';
+      for (q = cmdname; *q != '\0'; q++) *p++ = *q;
+      *p++ = '"';
+      free (v);
+    }
+  }
+#endif
+  *p++ = ' ';
+  for (q = cmdopts; *q != '\0'; q++) *p++ = *q;
+#ifdef WIN32
+  *p++ = '"';
+  bs = 0;
+  for (q = fname; *q != '\0'; q++) {
+    if (*q == '%') {
+      for (i = 0; i < bs; i++) *p++ = '\\'; /* Double backslash preceding double quotes. */
+      bs = 0;
+      /* There is no way to escape environment variables '%SOMEENV%'.
+         I expect the user has not set '%"SOMEENV"%'. */
+      *p++ = '"';
+      *p++ = '%';
+      *p++ = '"';
+    } else if (*q == '"') {
+      bs = 0;
+      /* Correctly escaping double quotes is a pain.
+         But we cannot use double quotes in path name, so remove it. */
+    } else if (*q == '\\') {
+      bs++;
+      *p++ = *q;
+    } else {
+      bs = 0;
+      *p++ = *q;
+    }
+  }
+  /* Filenames never end with a backslash.
+     So, it will not be '\' + '"'. */
+  *p++ = '"';
+#else
+  *p++ = '\'';
+  for (q = fname; *q != '\0'; q++) {
+    if (*q == '\'') {
+      *p++ = '\'';
+      *p++ = '\\';
+      *p++ = '\'';
+      *p++ = '\'';
+    } else {
+      *p++ = *q;
+    }
+  }
+  *p++ = '\'';
+#endif
+  *p++ = '\0';
+
+#ifdef _DEBUG
+  fprintf(stderr, "\nDebug: pdf_open_out: popen cmd=%s\n", cmd);
+#endif
+  errno = err = 0;
+#ifdef WIN32
+  *f_ptr = popen(cmd, "wb");
+#else
+  *f_ptr = popen(cmd, "w");
+#endif
+  err = errno;
+  if (*f_ptr == NULL) {
+    err = (errno != 0) ? errno : -1;
+    fprintf(stderr, "\nError: pdf_open_out: popen errno=%d, cmd=%s\n", errno, cmd);
+  }
+  free(cmd);
+
+  pdf_pipe = *f_ptr;
+
+  if (*f_ptr)
+    setvbuf(*f_ptr,NULL,_IONBF,0);
+
+  /* change nameoffile accordingly.  */
+  if (fname != nameoffile + 1) {
+    free (nameoffile);
+    namelength = strlen (fname);
+    nameoffile = xmalloc (namelength + 2);
+    strcpy (nameoffile + 1, fname);
+    free(fname);
+  }
+
+  return err;
+}
+
+int
+pdf_close (FILE *f)
+{
+  int err;
+
+  if (pdf_pipe != f)
+    return false;
+
+  err = pclose (f);
+
+  pdf_pipe = NULL;
+
+  return err;
+}
+
+#endif /* npTeX */
 
 /* All our interrupt handler has to do is set TeX's or Metafont's global
    variable `interrupt'; then they will do everything needed.  */

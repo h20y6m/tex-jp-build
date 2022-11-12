@@ -296,6 +296,13 @@ extern void u_close_file_or_pipe(unicodefile* f);
 #endif
 #endif
 
+#if defined(npTeX)
+extern int pdf_open_out(FILE **);
+extern int pdf_close (FILE *);
+#define pdfopenout(f) pdf_open_out(&(f))
+#define pdfclose(f) pdf_close(f)
+#endif
+
 /* Used in tex.ch (section 1338) to get a core dump in debugging mode.  */
 #ifdef unix
 #define dumpcore abort
