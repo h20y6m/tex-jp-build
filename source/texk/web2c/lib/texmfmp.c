@@ -2380,7 +2380,8 @@ pdf_open_out (FILE **f_ptr)
 {
   int i, bs, err = 0;
   FILE *f;
-  char *cmd, *fname, *p, *q;
+  char *cmd, *fname, *p;
+  const char *q;
   const char *cmdname = "dvipdfmx";
   const char *cmdopts = "-q -o ";
   boolean absolute = kpse_absolute_p(nameoffile+1, false);
@@ -2480,7 +2481,7 @@ pdf_open_out (FILE **f_ptr)
     setvbuf(*f_ptr,NULL,_IONBF,0);
 
   /* change nameoffile accordingly.  */
-  if (fname != nameoffile + 1) {
+  if (fname != (char *)(nameoffile + 1)) {
     free (nameoffile);
     namelength = strlen (fname);
     nameoffile = xmalloc (namelength + 2);
