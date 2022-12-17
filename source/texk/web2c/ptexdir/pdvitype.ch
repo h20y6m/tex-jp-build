@@ -146,6 +146,32 @@ for k:=1 to nt do
   end;
 @z
 
+@x variable-jfm
+@<Move font name into the |cur_name| string@>=
+r := name_end - name_start;
+cur_name := xmalloc_array (char, r);
+{|strncpy| might be faster, but it's probably a good idea to keep the
+ |xchr| translation.}
+for k := name_start to name_end do begin
+  cur_name[k - name_start] := xchr[names[k]];
+end;
+cur_name[r] := 0; {Append null byte for C.}
+@y
+@<Move font name into the |cur_name| string@>=
+r := name_end - name_start;
+cur_name := xmalloc_array (char, r+1);
+{|strncpy| might be faster, but it's probably a good idea to keep the
+ |xchr| translation.}
+for k := name_start to name_end do begin
+  cur_name[k - name_start] := xchr[names[k]];
+end;
+cur_name[r] := 0; {Append null byte for C.}
+for k := 0 to r-1 do begin
+  if cur_name[k]=':' then
+    cur_name[k] := 0;
+end;
+@z
+
 @x
 @p procedure out_text(c:ASCII_code);
 begin if text_ptr=line_length-2 then flush_text;

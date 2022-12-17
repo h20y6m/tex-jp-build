@@ -847,10 +847,23 @@ tfm_open (const char *tfm_name, int must_exist)
   int i, format = TFM_FORMAT;
   off_t tfm_file_size;
   char *file_name = NULL;
+  char *tfm_file_name = NULL;
+  char *tfm_variable = NULL;
 
   for (i = 0; i < numfms; i++) {
     if (!strcmp(tfm_name, fms[i].tex_name))
       return i;
+  }
+
+  tfm_variable = strchr(tfm_name, ':');
+  if (tfm_variable) {
+    size_t len = tfm_variable - tfm_name;
+    tfm_file_name = NEW(len + 1, char);
+    strncpy(tfm_file_name, tfm_name, len);
+    tfm_file_name[len] = '\0';
+  } else {
+    tfm_file_name = NEW(strlen(tfm_name) + 1, char);
+    strcpy(tfm_file_name, tfm_name);
   }
 
   /*
@@ -880,11 +893,11 @@ tfm_open (const char *tfm_name, int must_exist)
  {
    char *ofm_name, *suffix;
 
-   suffix = strrchr(tfm_name, '.');
+   suffix = strrchr(tfm_file_name, '.');
    if (!suffix || (strcasecmp(suffix, ".tfm") != 0 &&
                    strcasecmp(suffix, ".ofm") != 0)) {
-     ofm_name = NEW(strlen(tfm_name) + strlen(".ofm") + 1, char);
-     strcpy(ofm_name, tfm_name);
+     ofm_name = NEW(strlen(tfm_file_name) + strlen(".ofm") + 1, char);
+     strcpy(ofm_name, tfm_file_name);
      strcat(ofm_name, ".ofm");
    } else {
      ofm_name = NULL;
@@ -893,10 +906,10 @@ tfm_open (const char *tfm_name, int must_exist)
        (file_name = kpse_find_file(ofm_name, kpse_ofm_format, 0)) != NULL) {
      format = OFM_FORMAT;
    } else if ((file_name =
-               kpse_find_file(tfm_name, kpse_tfm_format, 0)) != NULL) {
+               kpse_find_file(tfm_file_name, kpse_tfm_format, 0)) != NULL) {
      format = TFM_FORMAT;
    } else if ((file_name =
-               kpse_find_file(tfm_name, kpse_ofm_format, 0)) != NULL) {
+               kpse_find_file(tfm_file_name, kpse_ofm_format, 0)) != NULL) {
      suffix = strrchr(file_name, '.');
      if (suffix && strcasecmp(suffix, ".ofm") == 0)
        format = OFM_FORMAT;
@@ -913,7 +926,7 @@ tfm_open (const char *tfm_name, int must_exist)
    */
   if (file_name == NULL) {
     if (must_exist) {
-      if ((file_name = kpse_find_file(tfm_name, kpse_tfm_format, 1)) != NULL)
+      if ((file_name = kpse_find_file(tfm_file_name, kpse_tfm_format, 1)) != NULL)
 	format = TFM_FORMAT;
       else {
 	ERROR("Unable to find TFM file \"%s\".", tfm_name);
@@ -965,6 +978,9 @@ tfm_open (const char *tfm_name, int must_exist)
 
   if (dpx_conf.verbose_level > 0) 
     MESG(")");
+
+  if (tfm_file_name)
+    RELEASE(tfm_file_name);
 
   return numfms++;
 }

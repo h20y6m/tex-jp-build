@@ -65,6 +65,7 @@ struct vf
   unsigned char **ch_pkt, message_flag;
   uint32_t *pkt_len;
   unsigned num_chars;
+  char *jfm_variable;
 };
 
 struct vf *vf_fonts = NULL;
@@ -172,6 +173,15 @@ static void read_a_font_def(FILE *vf_file, int32_t font_id, int thisfont)
   fread (dev_font -> name, 1, name_length, vf_file);
   (dev_font -> directory)[dir_length] = 0;
   (dev_font -> name)[name_length] = 0;
+  if (vf_fonts[thisfont].jfm_variable) {
+    char *name = dev_font->name;
+    size_t len = strlen(name) + 1 + strlen(vf_fonts[thisfont].jfm_variable);
+    dev_font->name = NEW (len+1, char);
+    strcpy(dev_font->name, name);
+    strcat(dev_font->name, ":");
+    strcat(dev_font->name, vf_fonts[thisfont].jfm_variable);
+    RELEASE (name);
+  }
   vf_fonts[thisfont].num_dev_fonts += 1;
   dev_font->tfm_id = tfm_open (dev_font -> name, 1); /* must exist */
   dev_font->dev_id =
@@ -252,12 +262,25 @@ int vf_locate_font (const char *tex_name, spt_t ptsize)
   if (i != num_vf_fonts) {
     thisfont = i;
   } else {
+    char *vf_file_name = NULL;
+    char *jfm_variable = NULL;
+    jfm_variable = strchr(tex_name, ':');
+    if (jfm_variable) {
+      size_t len = jfm_variable - tex_name;
+      vf_file_name = NEW(len + 1, char);
+      strncpy(vf_file_name, tex_name, len);
+      vf_file_name[len] = '\0';
+    } else {
+      vf_file_name = NEW(strlen(tex_name) + 1, char);
+      strcpy(vf_file_name, tex_name);
+    }
+
     /* It's hasn't already been loaded as a VF, so try to load it */
-    full_vf_file_name = kpse_find_file (tex_name, 
+    full_vf_file_name = kpse_find_file (vf_file_name, 
 					kpse_vf_format,
 					1);
     if (!full_vf_file_name) {
-      full_vf_file_name = kpse_find_file (tex_name, 
+      full_vf_file_name = kpse_find_file (vf_file_name, 
 					  kpse_ovf_format,
 					  1);
     }
@@ -278,6 +301,12 @@ int vf_locate_font (const char *tex_name, spt_t ptsize)
 	vf_fonts[thisfont].num_chars = 0;
 	vf_fonts[thisfont].ch_pkt = NULL;
 	vf_fonts[thisfont].pkt_len = NULL;
+	if (jfm_variable) {
+		vf_fonts[thisfont].jfm_variable = NEW (strlen(jfm_variable+1)+1, char);;
+		strcpy (vf_fonts[thisfont].jfm_variable, jfm_variable+1);
+	} else {
+		vf_fonts[thisfont].jfm_variable = NULL;
+	}
       }
       read_header(vf_file, thisfont);
       process_vf_file (vf_file, thisfont);
@@ -287,6 +316,8 @@ int vf_locate_font (const char *tex_name, spt_t ptsize)
     }
     if (full_vf_file_name)
       RELEASE(full_vf_file_name);
+    if (vf_file_name)
+      RELEASE(vf_file_name);
   }
   return thisfont;
 }
