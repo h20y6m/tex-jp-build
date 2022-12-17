@@ -73,6 +73,7 @@ set(eptex_ch_srcs
   eptexdir/eptex-base.ch
   eptexdir/etex.ch0
   ptexdir/ptex-base.ch
+  ptexdir/variable-jfm.ch
   eptexdir/eptex.ech
   eptexdir/etex.ch1
   ${eptex_ch_synctex}

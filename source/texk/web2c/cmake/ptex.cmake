@@ -81,6 +81,7 @@ set(ptex_web_srcs
 
 set(ptex_ch_srcs
   ptexdir/ptex-base.ch
+  ptexdir/variable-jfm.ch
   ${ptex_ch_synctex}
   tex-binpool.ch
   )
@@ -134,3 +135,47 @@ if(WIN32)
       )
   endforeach()
 endif()
+
+
+
+function(web2c_p_tangle BASE)
+  cmake_parse_arguments(PARSE_ARGV 1 CONVERT "" "" "OUTPUT;DEPENDS")
+  if(NOT CONVERT_OUTPUT)
+    set(CONVERT_OUTPUT ${BASE}.p)
+  endif()
+  if(NOT CONVERT_DEPENDS)
+    set(CONVERT_DEPENDS ${BASE}.web ${BASE}.ch)
+  endif()
+  add_custom_command(
+    OUTPUT ${CONVERT_OUTPUT}
+    DEPENDS ${CONVERT_DEPENDS} tangle
+    COMMAND ${CMAKE_COMMAND} -E env
+      "TEXMFCNF=${CMAKE_CURRENT_SOURCE_DIR}/../kpathsea"
+      "WEBINPUTS=.;${CMAKE_CURRENT_SOURCE_DIR}/ptexdir;${CMAKE_CURRENT_SOURCE_DIR}"
+      "CWEBINPUTS=.;${CMAKE_CURRENT_SOURCE_DIR}"
+      "$<TARGET_FILE:tangle>" ${BASE} ${BASE}
+    )
+endfunction()
+
+## pDVItype
+
+set(pdvitype_SOURCES
+  pdvitype.c
+  pdvitype.h
+  ptexdir/kanji.h
+  )
+
+add_executable(pdvitype ${pdvitype_SOURCES})
+
+target_include_directories(pdvitype
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+  PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+
+target_link_libraries(pdvitype libkanji web2c_libp ptexenc zlib web2c_lib kpathsea)
+
+web2c_convert(pdvitype OUTPUT pdvitype.c pdvitype.h DEPENDS pdvitype.p ${web2c_texmf} ptexdir/pdvitype.defines)
+
+web2c_p_tangle(pdvitype OUTPUT pdvitype.p DEPENDS pdvitype.web ptexdir/pdvitype.ch)
+
+web2c_tie_m(pdvitype.web SOURCES dvitype.web dvitype.ch)

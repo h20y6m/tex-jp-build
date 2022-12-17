@@ -78,6 +78,7 @@ set(euptex_web_srcs
 set(euptex_ch_srcs
   eptexdir/etex.ch0
   ptexdir/ptex-base.ch
+  ptexdir/variable-jfm.ch
   uptexdir/uptex-m.ch
   euptexdir/euptex.ch0
   eptexdir/eptex.ech

@@ -80,6 +80,7 @@ set(uptex_web_srcs
 
 set(uptex_ch_srcs
   ptexdir/ptex-base.ch
+  ptexdir/variable-jfm.ch
   uptexdir/uptex-m.ch
   ${uptex_ch_synctex}
   tex-binpool.ch
@@ -144,3 +145,47 @@ if(WIN32)
       )
   endforeach()
 endif()
+
+
+
+function(web2c_up_tangle BASE)
+  cmake_parse_arguments(PARSE_ARGV 1 CONVERT "" "" "OUTPUT;DEPENDS")
+  if(NOT CONVERT_OUTPUT)
+    set(CONVERT_OUTPUT ${BASE}.p)
+  endif()
+  if(NOT CONVERT_DEPENDS)
+    set(CONVERT_DEPENDS ${BASE}.web ${BASE}.ch)
+  endif()
+  add_custom_command(
+    OUTPUT ${CONVERT_OUTPUT}
+    DEPENDS ${CONVERT_DEPENDS} tangle
+    COMMAND ${CMAKE_COMMAND} -E env
+      "TEXMFCNF=${CMAKE_CURRENT_SOURCE_DIR}/../kpathsea"
+      "WEBINPUTS=.;${CMAKE_CURRENT_SOURCE_DIR}/uptexdir;${CMAKE_CURRENT_SOURCE_DIR}"
+      "CWEBINPUTS=.;${CMAKE_CURRENT_SOURCE_DIR}"
+      "$<TARGET_FILE:tangle>" ${BASE} ${BASE}
+    )
+endfunction()
+
+## upDVItype
+
+set(updvitype_SOURCES
+  updvitype.c
+  updvitype.h
+  uptexdir/kanji.h
+  )
+
+add_executable(updvitype ${updvitype_SOURCES})
+
+target_include_directories(updvitype
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+  PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+
+target_link_libraries(updvitype libukanji web2c_libp ptexenc zlib web2c_lib kpathsea)
+
+web2c_convert(updvitype OUTPUT updvitype.c updvitype.h DEPENDS updvitype.p ${web2c_texmf} uptexdir/updvitype.defines)
+
+web2c_up_tangle(updvitype OUTPUT updvitype.p DEPENDS updvitype.web uptexdir/updvitype.ch)
+
+web2c_tie_m(updvitype.web SOURCES dvitype.web dvitype.ch)
