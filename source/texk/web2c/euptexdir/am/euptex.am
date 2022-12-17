@@ -62,6 +62,7 @@ euptex.ch: tie$(EXEEXT) euptex.web $(euptex_ch_srcs)
 euptex_ch_srcs = \
 	eptexdir/etex.ch0 \
 	ptexdir/ptex-base.ch \
+	ptexdir/variable-jfm.ch \
 	uptexdir/uptex-m.ch \
 	euptexdir/euptex.ch0 \
 	eptexdir/eptex.ech \

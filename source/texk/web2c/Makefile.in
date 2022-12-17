@@ -4493,6 +4493,7 @@ ptex_web_srcs = \
 
 ptex_ch_srcs = \
 	ptexdir/ptex-base.ch \
+	ptexdir/variable-jfm.ch \
 	$(ptex_ch_synctex) \
 	tex-binpool.ch
 
@@ -4532,6 +4533,7 @@ eptex_ch_srcs = \
 	eptexdir/eptex-base.ch \
 	eptexdir/etex.ch0 \
 	ptexdir/ptex-base.ch \
+	ptexdir/variable-jfm.ch \
 	eptexdir/eptex.ech \
 	eptexdir/etex.ch1 \
 	$(eptex_ch_synctex) \
@@ -4576,6 +4578,7 @@ uptex_web_srcs = \
 
 uptex_ch_srcs = \
 	ptexdir/ptex-base.ch \
+	ptexdir/variable-jfm.ch \
 	uptexdir/uptex-m.ch \
 	$(uptex_ch_synctex) \
 	tex-binpool.ch
@@ -4643,6 +4646,7 @@ euptex_web_srcs = \
 euptex_ch_srcs = \
 	eptexdir/etex.ch0 \
 	ptexdir/ptex-base.ch \
+	ptexdir/variable-jfm.ch \
 	uptexdir/uptex-m.ch \
 	euptexdir/euptex.ch0 \
 	eptexdir/eptex.ech \
