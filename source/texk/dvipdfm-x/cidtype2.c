@@ -463,18 +463,66 @@ cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
   else if (outbytesleft == 28) {
     if (unicode_cmap) {
       /* We assume the output encoding is UTF-16. */
-      int32_t              uc;
+      int32_t              uc, uvs;
       const unsigned char *endptr;
 
       p      = outbuf;
       endptr = p + 4;
       uc = UC_UTF16BE_decode_char(&p, endptr);
-      if (p != endptr)
-        WARN("CID=%u mapped to non-single Unicode characters...", cid);
-      return p == endptr ? uc : -1;
+      if (p == endptr)
+        return uc; /* single Unicode characters */
+      /* Check following Variation Selectors */
+      uvs = UC_UTF16BE_decode_char(&p, endptr);
+      if (p == endptr && uvs >= 0xfe00 && uvs <= 0xfe0f) {
+          /* Ignore Standardized Variation Sequence */
+          return uc;
+      }
+      WARN("CID=%u mapped to non-single Unicode characters...", cid);
+      return -1;
     } else {
       return (outbuf[0] << 24)|(outbuf[1] << 16)|(outbuf[2] << 8)|outbuf[3];
     }
+  } else if (outbytesleft == 26) { /* 6 bytes sequence */
+    if (unicode_cmap) {
+      /* We assume the output encoding is UTF-16. */
+      int32_t              uc, uvs;
+      const unsigned char *endptr;
+
+      p      = outbuf;
+      endptr = p + 6;
+      uc = UC_UTF16BE_decode_char(&p, endptr);
+      uvs = UC_UTF16BE_decode_char(&p, endptr);
+      if (p == endptr) {
+        if (uvs >= 0xfe00 && uvs <= 0xfe0f) {
+          /* Ignore Standardized Variation Sequence */
+          return uc;
+        } else if (uvs >= 0xe0100 && uvs <= 0xe01ef) {
+          /* Ignore Ideographic Variation Sequence */
+          return uc;
+        }
+      }
+      WARN("CID=%u mapped to non-single Unicode characters...", cid);
+      return -1;
+    }
+  } else if (outbytesleft == 24) {  /* 8 bytes sequence */
+    if (unicode_cmap) {
+      /* We assume the output encoding is UTF-16. */
+      int32_t              uc, uvs;
+      const unsigned char *endptr;
+
+      p      = outbuf;
+      endptr = p + 8;
+      uc = UC_UTF16BE_decode_char(&p, endptr);
+      uvs = UC_UTF16BE_decode_char(&p, endptr);
+      if (p == endptr) {
+        if (uvs >= 0xe0100 && uvs <= 0xe01ef) {
+          /* Ignore Ideographic Variation Sequence */
+          return uc;
+        }
+      }
+      WARN("CID=%u mapped to non-single Unicode characters...", cid);
+      return -1;
+      }
   }
 
   return -1;
