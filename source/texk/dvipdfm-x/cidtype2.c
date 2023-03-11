@@ -438,12 +438,14 @@ fix_CJK_symbols (unsigned short code)
 }
 
 static int32_t
-cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
+cid_to_code (CMap *cmap, CID cid, int unicode_cmap, int32_t *puvs)
 {
   unsigned char        inbuf[2], outbuf[32];
   int                  inbytesleft = 2, outbytesleft = 32;
   const unsigned char *p;
   unsigned char       *q;
+
+  *puvs = -1;
 
   if (!cmap)
     return cid;
@@ -474,11 +476,8 @@ cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
       /* Check following Variation Selectors */
       uvs = UC_UTF16BE_decode_char(&p, endptr);
       if (p == endptr && uvs >= 0xfe00 && uvs <= 0xfe0f) {
-          /* Ignore Standardized Variation Sequence */
-          /* or Combine CJK compatibility ideograph */
-          int32_t cci = UC_Combine_CJK_compatibility_ideograph(uc, uvs);
-          if (cci > 0)
-              uc = cci;
+          /* Standardized Variation Sequence */
+          *puvs = uvs;
           return uc;
       }
       WARN("CID=%u mapped to non-single Unicode characters...", cid);
@@ -496,18 +495,10 @@ cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
       endptr = p + 6;
       uc = UC_UTF16BE_decode_char(&p, endptr);
       uvs = UC_UTF16BE_decode_char(&p, endptr);
-      if (p == endptr) {
-        if (uvs >= 0xfe00 && uvs <= 0xfe0f) {
-          /* Ignore Standardized Variation Sequence */
-          /* or Combine CJK compatibility ideograph */
-          int32_t cci = UC_Combine_CJK_compatibility_ideograph(uc, uvs);
-          if (cci > 0)
-              uc = cci;
-          return uc;
-        } else if (uvs >= 0xe0100 && uvs <= 0xe01ef) {
-          /* Ignore Ideographic Variation Sequence */
-          return uc;
-        }
+      if (p == endptr && ((uvs >= 0xfe00 && uvs <= 0xfe0f) || (uvs >= 0xe0100 && uvs <= 0xe01ef))) {
+        /* Variation Sequence */
+        *puvs = uvs;
+        return uc;
       }
       WARN("CID=%u mapped to non-single Unicode characters...", cid);
       return -1;
@@ -524,7 +515,8 @@ cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
       uvs = UC_UTF16BE_decode_char(&p, endptr);
       if (p == endptr) {
         if (uvs >= 0xe0100 && uvs <= 0xe01ef) {
-          /* Ignore Ideographic Variation Sequence */
+          /* Ideographic Variation Sequence */
+          *puvs = uvs;
           return uc;
         }
       }
@@ -801,7 +793,7 @@ CIDFont_type2_dofont (pdf_font *font)
   if (h_used_chars) {
     used_chars = h_used_chars;
     for (cid = 1; cid <= last_cid; cid++) {
-      int32_t  code;
+      int32_t  code, uvs = -1;
       uint16_t gid = 0;
 
       if (!is_used_char2(h_used_chars, cid))
@@ -817,11 +809,18 @@ CIDFont_type2_dofont (pdf_font *font)
         code = cid;
         break;
       case via_cid_to_code:
-        code = cid_to_code(cmap, cid, unicode_cmap);
+        code = cid_to_code(cmap, cid, unicode_cmap, &uvs);
         if (code < 0) {
           WARN("Unable to map CID to code: CID=%u", cid);
         } else {
-          gid  = tt_cmap_lookup(ttcmap, code);
+          if (uvs > 0) {
+            /* Check CJK compatibility ideographs */
+            int32_t cci = UC_Combine_CJK_compatibility_ideograph(code, uvs);
+            if (cci > 0)
+              gid = tt_cmap_lookup(ttcmap, cci);
+          }
+          if (gid == 0)
+            gid  = tt_cmap_lookup(ttcmap, code);
 #ifdef FIX_CJK_UNIOCDE_SYMBOLS
           if (gid == 0 && unicode_cmap) {
             int alt_code;
@@ -883,7 +882,7 @@ CIDFont_type2_dofont (pdf_font *font)
     }
 
     for (cid = 1; cid <= last_cid; cid++) {
-      int32_t  code;
+      int32_t  code, uvs = -1;
       uint16_t gid = 0;
 
       if (!is_used_char2(v_used_chars, cid))
@@ -907,11 +906,18 @@ CIDFont_type2_dofont (pdf_font *font)
         code = cid;
         break;
       case via_cid_to_code:
-        code = cid_to_code(cmap, cid, unicode_cmap);
+        code = cid_to_code(cmap, cid, unicode_cmap, &uvs);
         if (code < 0) {
           WARN("Unable to map CID to code: CID=%u", cid);
         } else {
-          gid  = tt_cmap_lookup(ttcmap, code);
+          if (uvs > 0) {
+            /* Check CJK compatibility ideographs */
+            int32_t cci = UC_Combine_CJK_compatibility_ideograph(code, uvs);
+            if (cci > 0)
+              gid = tt_cmap_lookup(ttcmap, cci);
+          }
+          if (gid == 0)
+            gid  = tt_cmap_lookup(ttcmap, code);
 #ifdef FIX_CJK_UNIOCDE_SYMBOLS
           if (gid == 0 && unicode_cmap) {
             int alt_code;
