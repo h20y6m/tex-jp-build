@@ -475,6 +475,10 @@ cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
       uvs = UC_UTF16BE_decode_char(&p, endptr);
       if (p == endptr && uvs >= 0xfe00 && uvs <= 0xfe0f) {
           /* Ignore Standardized Variation Sequence */
+          /* or Combine CJK compatibility ideograph */
+          int32_t cci = UC_Combine_CJK_compatibility_ideograph(uc, uvs);
+          if (cci > 0)
+              uc = cci;
           return uc;
       }
       WARN("CID=%u mapped to non-single Unicode characters...", cid);
@@ -495,6 +499,10 @@ cid_to_code (CMap *cmap, CID cid, int unicode_cmap)
       if (p == endptr) {
         if (uvs >= 0xfe00 && uvs <= 0xfe0f) {
           /* Ignore Standardized Variation Sequence */
+          /* or Combine CJK compatibility ideograph */
+          int32_t cci = UC_Combine_CJK_compatibility_ideograph(uc, uvs);
+          if (cci > 0)
+              uc = cci;
           return uc;
         } else if (uvs >= 0xe0100 && uvs <= 0xe01ef) {
           /* Ignore Ideographic Variation Sequence */
