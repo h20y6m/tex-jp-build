@@ -125,7 +125,7 @@ if(WIN32)
   target_compile_definitions(calldll_eptex PRIVATE DLLPROC=dlleptexmain)
   target_link_libraries(calldll_eptex eptex)
 
-  foreach(name ptex eptex platex)
+  foreach(name ptex eptex)
     add_custom_command(TARGET calldll_eptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_eptex>"
