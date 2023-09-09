@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/env perl -s
 #
 # Copyright 2022-2023 Japanese TeX Development Community <issue@texjp.org>
 # You may freely use, modify and/or distribute this file.
@@ -7,6 +7,9 @@ use strict;
 use warnings;
 use 5.008;
 use Encode;
+
+my $st = 0;
+our $windows; # option -windows
 
 foreach $_ (<DATA>) {
     chomp;
@@ -19,12 +22,15 @@ foreach $_ (<DATA>) {
     print $ofh $src;
 }
 
+exit($st ? 239 : 0);
+
 
 sub make_str ($$;$) {
     my ($encname, $fname0, $fname1) = @_;
     my ($src);
 
     my ($fnameT) = $fname0;
+    my $cmnt = $windows ? '%' : ''; # comment out if option -windows
     $fnameT =~ s/\.tex$/-tmp.tex/;
 
 $src = <<END;
@@ -44,7 +50,7 @@ $src = <<END;
 \\immediate\\closeout1
 
 % current directory
-\\input "|cat $fnameT"
+$cmnt\\input "|cat $fnameT"
 \\input $fnameT
 END
 
@@ -60,7 +66,13 @@ $src .= <<END;
 \\relax\\end
 END
 
-    Encode::from_to($src, 'utf8', $encname) if ($encname !~ /UTF.*8/i);
+    if ($encname !~ /UTF.*8/i) {
+        my $ret = Encode::from_to($src, 'utf8', $encname);
+        if (!$ret) {
+            warn "fn-generate.perl: Encode::from_to() failed.\n";
+            $st++;
+        }
+    }
     return ($src);
 
 }
