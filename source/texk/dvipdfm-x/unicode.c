@@ -261,7 +261,7 @@ int32_t
 UC_Combine_CJK_compatibility_ideograph (int32_t ucv, int32_t uvs)
 {
   /* https://www.unicode.org/Public/UCD/latest/ucd/StandardizedVariants.txt */
-  static int32_t CJK_compatibility_ideographs[][3] = {
+  static const int32_t CJK_compatibility_ideographs[][3] = {
     {0x349E, 0xFE00, 0x2F80C},
     {0x34B9, 0xFE00, 0x2F813},
     {0x34BB, 0xFE00, 0x2F9CA},
@@ -1264,13 +1264,26 @@ UC_Combine_CJK_compatibility_ideograph (int32_t ucv, int32_t uvs)
     {0x2A291, 0xFE00, 0x2FA14},
     {0x2A392, 0xFE00, 0x2F88F},
     {0x2A600, 0xFE00, 0x2FA1D},
-    {-1,-1,-1},
+    /* Must be sorted. */
   };
-  size_t i;
-  for (i = 0; CJK_compatibility_ideographs[i][0] >= 0; i++) {
-      if (ucv == CJK_compatibility_ideographs[i][0] &&
-          uvs == CJK_compatibility_ideographs[i][1])
-        return CJK_compatibility_ideographs[i][2];
+  static const size_t CJK_compatibility_ideographs_count
+      = sizeof(CJK_compatibility_ideographs)
+          / sizeof(CJK_compatibility_ideographs[0]);
+
+  size_t lower = 0;
+  size_t upper = CJK_compatibility_ideographs_count;
+
+  while (lower < upper) {
+    size_t middle = (lower + upper) / 2;
+    int32_t u = CJK_compatibility_ideographs[middle][0];
+    int32_t v = CJK_compatibility_ideographs[middle][1];
+    if (ucv == u && uvs == v) {
+      return CJK_compatibility_ideographs[middle][2];
+    } else if (ucv < u || (ucv == u && uvs < v)) {
+      upper = middle;
+    } else if (ucv > u || (ucv == u && uvs > v)) {
+      lower = middle + 1;
+    }
   }
   return -1;
 }
