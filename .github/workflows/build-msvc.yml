@@ -204,8 +204,8 @@ jobs:
           #./uppltotf.exe --version || echo "uppltotf"
           #echo ""
           #./uptftopl.exe --version || echo "uptftopl"
-          #echo ""
-          #./upbibtex.exe --version || echo "upbibtex"
+          echo ""
+          ./upbibtex.exe --version || echo "upbibtex"
 
         env:
           srcroot: "../source"
@@ -258,6 +258,13 @@ jobs:
           $srcdir/uptexdir/wcfname.test    || echo -e "**\n** failed: up/wcfname.test\n**"
           $srcdir/uptexdir/wcfname0.test   || echo -e "**\n** failed: up/wcfname0.test\n**"
 
+          $srcdir/uptexdir/upbibtex.test             || echo -e "**\n** failed: up/upbibtex.test\n**"
+          $srcdir/uptexdir/upbibtex-openout-test.pl  || echo -e "**\n** failed: up/upbibtex-openout-test.pl\n**"
+          $srcdir/uptexdir/upbibtex-longline-test.pl || echo -e "**\n** failed: up/upbibtex-longline-test.pl\n**"
+          $srcdir/uptexdir/upbibtex-mem.test         || echo -e "**\n** failed: up/upbibtex-mem.test\n**"
+          $srcdir/uptexdir/nissya.test               || echo -e "**\n** failed: up/nissya.test\n**"
+          $srcdir/uptexdir/unibib.test               || echo -e "**\n** failed: up/unibib.test\n**"
+
           $srcdir/eptexdir/eptriptest.test   || echo -e "**\n** failed: ep/eptriptest.test\n**"
           $srcdir/eptexdir/pdfprimitive.test || echo -e "**\n** failed: ep/pdfprimitive.test\n**"
           $srcdir/eptexdir/epver.test        || echo -e "**\n** failed: ep/epver.test\n**"
@@ -307,8 +314,8 @@ jobs:
           # echo ""
           # ./uptftopl.exe --version || echo "uptftopl"
           # echo ""
-          # ./upbibtex.exe --version || echo "upbibtex"
-          # echo ""
+          ./upbibtex.exe --version || echo "upbibtex"
+          echo ""
           ./dvitype.exe --version || echo "dvitype"
           echo ""
           ./dvicopy.exe --version || echo "dvicopy"
