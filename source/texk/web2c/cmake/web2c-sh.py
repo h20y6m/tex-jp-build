@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import os.path
+import re
 import subprocess
 import sys
 
 option_verbose = False
+
 
 def main():
     global option_verbose
@@ -30,11 +32,11 @@ def main():
     hfile = "cpascal.h"
     more_defines = []
     web2c_options = ["-c" + basefile]
-    precmd = lambda lines: lines
-    midcmd = lambda lines: lines
+    def precmd(lines): return lines
+    def midcmd(lines): return lines
     fixwrites_options = []
     splitup_options = ["-i", "-l", "65000"]
-    postcmd = lambda lines: lines
+    def postcmd(lines): return lines
     output = cfile
     output_files = [cfile, basefile + ".h"]
 
@@ -44,17 +46,19 @@ def main():
     elif basefile in ["upbibtex", "updvitype", "uppltotf", "uptftopl"]:
         more_defines = [srcdir + "/uptexdir/uptex.defines"]
         hfile = "uptexdir/kanji.h"
-    
+
     if basefile in ["bibtex", "pbibtex", "upbibtex"]:
-        midcmd = cvtbib
+        midcmd = cvtbib_sed
     elif basefile in ["mf", "mflua", "mfluajit", "tex", "aleph", "etex", "pdftex", "ptex", "eptex", "euptex", "uptex", "xetex"]:
         if basefile.startswith("mf"):
-            more_defines = [srcdir + "/web2c/texmf.defines", srcdir + "/web2c/mfmp.defines"]
-            precmd = cvtmf1
+            more_defines = [srcdir + "/web2c/texmf.defines",
+                            srcdir + "/web2c/mfmp.defines"]
+            precmd = cvtmf1_sed
             web2c_options = ["-m", "-c" + basefile + "coerce"]
-            midcmd = cvtmf2
+            midcmd = cvtmf2_sed
         else:
-            more_defines = [srcdir + "/web2c/texmf.defines", srcdir + "/synctexdir/synctex.defines"]
+            more_defines = [srcdir + "/web2c/texmf.defines",
+                            srcdir + "/synctexdir/synctex.defines"]
             web2c_options = ["-t", "-c" + basefile + "coerce"]
             fixwrites_options = ["-t"]
 
@@ -62,17 +66,21 @@ def main():
         if os.path.isfile(prog_defines):
             more_defines += [prog_defines]
         hfile = "texmfmp.h"
-        postcmd = lambda lines: run([web2c + "/splitup", *splitup_options, basefile], lines)
+        def postcmd(lines): return run(
+            [web2c + "/splitup", *splitup_options, basefile], lines)
         cfile = basefile + "0.c"
         output = ""
-        output_files = [basefile + s for s in ["0.c", "1.c", "2.c", "3.c", "4.c", "5.c", "6.c", "7.c", "8.c", "9.c", "ini.c", "d.h", "coerce.h"]]
+        output_files = [basefile + s for s in ["0.c", "1.c", "2.c", "3.c",
+                                               "4.c", "5.c", "6.c", "7.c", "8.c", "9.c", "ini.c", "d.h", "coerce.h"]]
 
     try:
-        lines = cat([srcdir + "/web2c/common.defines", *more_defines, pascalfile])
+        lines = cat([srcdir + "/web2c/common.defines",
+                    *more_defines, pascalfile])
         lines = precmd(lines)
         lines = run([web2c + "/web2c", "-h" + hfile, *web2c_options], lines)
         lines = midcmd(lines)
-        lines = run([web2c + "/fixwrites", *fixwrites_options, basefile], lines)
+        lines = run([web2c + "/fixwrites", *
+                    fixwrites_options, basefile], lines)
         lines = postcmd(lines)
         if output:
             with open(output, "w") as o:
@@ -90,9 +98,10 @@ def main():
         if output and os.path.exists(output):
             os.unlink(output)
         for o in output_files:
-            if  os.path.exists(o):
+            if os.path.exists(o):
                 os.unlink(o)
         sys.exit(1)
+
 
 def cat(files):
     for file in files:
@@ -102,22 +111,80 @@ def cat(files):
             for line in f:
                 yield line
 
+
 def run(args, input):
     if option_verbose:
         print("run: " + str(args))
     return subprocess.run(args, check=True, input="".join(input), encoding="utf-8", stdout=subprocess.PIPE).stdout.splitlines(True)
 
-def cvtbib(lines):
+
+def cvtbib_sed(lines):
+    lines = sed_match_append_line_2(lines, '#include "cpascal\.h"',
+                                    '#include <setjmp\.h>\n',
+                                    'jmp_buf jmp9998, jmp32; int lab31=0;\n')
+    lines = sed_match_append_line_2(lines, '#include "u*ptexdir/kanji\.h"',
+                                    '#include <setjmp.h>\n',
+                                    'jmp_buf jmp9998, jmp32; int lab31=0;\n')
+    lines = sed_sub(lines, 'goto lab31 ; *', '{lab31=1; return;}')
+    lines = sed_sub(lines, 'goto lab32', 'longjmp(jmp32,1)')
+    lines = sed_sub_g(lines, 'goto lab9998', 'longjmp(jmp9998,1)')
+    lines = sed_sub(lines, 'lab31:', '')
+    lines = sed_sub(lines, 'lab32:', '')
+    lines = sed_sub(lines, 'hack0 \(\) ;', 'if(setjmp(jmp9998)==1) goto lab9998;')
+    lines = sed_sub(lines, 'hack1 \(\) ;', 'if(setjmp(jmp32)==0)for(;;)')
+    lines = sed_sub(lines, 'hack2 \(\)', 'break')
+    lines = sed_sub_after(lines, '^void mainbody', 'while \( true', 'while (lab31==0')
+    return lines
+
+
+def cvtmf1_sed(lines):
+    # TODO: cvtmf1.sed
     for line in lines:
         yield line
 
-def cvtmf1(lines):
+
+def cvtmf2_sed(lines):
+    # TODO: cvtmf2.sed
     for line in lines:
         yield line
 
-def cvtmf2(lines):
+
+def sed_sub(lines, pattern, replace):
+    re_pattern = re.compile(pattern, re.ASCII)
     for line in lines:
+        line = re_pattern.sub(replace, line, 1)
         yield line
+
+
+def sed_sub_g(lines, pattern, replace):
+    re_pattern = re.compile(pattern, re.ASCII)
+    for line in lines:
+        line = re_pattern.sub(replace, line)
+        yield line
+
+
+def sed_sub_after(lines, pattern_1, pattern_2, replace):
+    re_pattern_1 = re.compile(pattern_1, re.ASCII)
+    re_pattern_2 = re.compile(pattern_2, re.ASCII)
+    found = False
+    for line in lines:
+        if re_pattern_1.match(line):
+            found = True
+        if found:
+            line = re_pattern_2.sub(replace, line)
+        yield line
+
+
+def sed_match_append_line_2(lines, pattern, append_1, append_2):
+    re_pattern = re.compile(pattern, re.ASCII)
+    for line in lines:
+        if re_pattern.match(line):
+            yield line
+            yield append_1
+            yield append_2
+            continue
+        yield line
+
 
 if __name__ == "__main__":
     main()

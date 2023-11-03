@@ -144,3 +144,49 @@ target_link_libraries(libukanji ptexenc kpathsea zlib)
 #      )
 #  endforeach()
 #endif()
+
+
+
+## upBibTeX
+##
+
+set(nodist_upbibtex_SOURCES
+  upbibtex.c
+  upbibtex.h
+  )
+
+set(upbibtex_SOURCES
+  uptexdir/kanji.h
+  )
+
+add_executable(upbibtex ${nodist_upbibtex_SOURCES} ${upbibtex_SOURCES})
+
+target_include_directories(upbibtex
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+  PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+
+target_link_libraries(upbibtex libukanji web2c_libp ptexenc zlib web2c_lib kpathsea)
+
+web2c_convert(upbibtex OUTPUT upbibtex.c upbibtex.h DEPENDS upbibtex.p ${web2c_texmf} uptexdir/uptex.defines)
+
+# up_tangle
+add_custom_command(
+  OUTPUT upbibtex.p
+  DEPENDS upbibtex.web uptexdir/upbibtex.ch tangle
+  COMMAND ${CMAKE_COMMAND} -E env
+    "TEXMFCNF=${CMAKE_CURRENT_SOURCE_DIR}/../kpathsea"
+    "WEBINPUTS=.;${CMAKE_CURRENT_SOURCE_DIR}/uptexdir;${CMAKE_CURRENT_SOURCE_DIR}"
+    "CWEBINPUTS=.;${CMAKE_CURRENT_SOURCE_DIR}"
+    "$<TARGET_FILE:tangle>" upbibtex upbibtex
+  )
+
+web2c_tie_m(upbibtex.web SOURCES bibtex.web bibtex.ch)
+
+if(WIN32)
+  add_custom_command(TARGET upbibtex POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+      "$<TARGET_FILE:upbibtex>"
+      "$<TARGET_FILE_DIR:upbibtex>/pbibtex.exe"
+    )
+endif()
