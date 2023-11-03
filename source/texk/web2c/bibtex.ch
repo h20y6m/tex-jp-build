@@ -1762,6 +1762,12 @@ setup_bound_var (ENT_STR_SIZE)('ent_str_size')(ent_str_size);
 setup_bound_var (GLOB_STR_SIZE)('glob_str_size')(glob_str_size);
 setup_bound_var (MAX_STRINGS)('max_strings')(max_strings);
 setup_bound_var (MAX_PRINT_LINE)('max_print_line')(max_print_line);
+if (max_print_line >= buf_size) then
+  begin
+  max_print_line := buf_size-1;
+  write_ln (term_out, 'Warning--max_print_line is too large, set to ', (buf_size-1):0, '.');
+  mark_warning;
+  end;
 @#
 hash_size := max_strings;
 if hash_size < HASH_SIZE then hash_size := HASH_SIZE;
