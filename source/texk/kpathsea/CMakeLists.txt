@@ -1,6 +1,6 @@
 # CMakeLists.txt for kpathsea
 
-set(kpathsea_VERSION "6.3.6/dev")
+set(kpathsea_VERSION "6.4.0")
 
 include(cmake/config.cmake)
 

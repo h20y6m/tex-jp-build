@@ -136,7 +136,7 @@ if(WIN32)
   target_compile_definitions(calldll_euptex PRIVATE DLLPROC=dlleuptexmain)
   target_link_libraries(calldll_euptex euptex)
 
-  foreach(name uptex euptex platex platex-dev uplatex uplatex-dev)
+  foreach(name ptex eptex uptex euptex platex platex-dev uplatex uplatex-dev)
     add_custom_command(TARGET calldll_euptex POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
         "$<TARGET_FILE:calldll_euptex>"

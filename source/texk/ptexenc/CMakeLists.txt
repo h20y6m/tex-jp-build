@@ -1,6 +1,7 @@
 # CMakeLists.txt for ptexenc
 
-set(PTEXENC_VERSION "1.4.4/dev")
+set(PTEXENC_VERSION "1.4.5")
+set(TL_VERSION "TeX Live ${TEX_LIVE_VERSION}")
 
 option(NO_PTENC_DLL "NO_PTENC_DLL" ON)
 option(KANJI_ICONV "use iconv for kanji <=> unicode conversion." OFF)
@@ -55,3 +56,13 @@ target_include_directories(ptexenc
   )
 
 target_link_libraries(ptexenc PUBLIC kpathsea)
+
+
+
+add_executable(ptekf ptekf.c)
+
+target_include_directories(ptekf
+  PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/ptexenc"
+  )
+
+target_link_libraries(ptekf ptexenc)
