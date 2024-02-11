@@ -1,6 +1,6 @@
 # CMakeLists.txt for ptexenc
 
-set(PTEXENC_VERSION "1.4.5")
+set(PTEXENC_VERSION "1.4.6")
 set(TL_VERSION "TeX Live ${TEX_LIVE_VERSION}")
 
 option(NO_PTENC_DLL "NO_PTENC_DLL" ON)
