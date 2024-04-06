@@ -64,6 +64,7 @@
 #  tex.ch
 #  tracingstacklevels.ch
 #  partoken.ch
+#  locnull-optimize.ch
 #  showstream.ch
 #  zlib-fmt.ch
 #  etexdir/tex.ech
@@ -79,6 +80,7 @@
 #  eptexdir/fam256.ch
 #  eptexdir/pdfutils.ch
 #  eptexdir/suppresserrors.ch
+#  eptexdir/unbalanced-braces-eptex.ch
 #  eptexdir/char-warning-eptex.ch
 #  tex-binpool.ch
 #  )

@@ -70,6 +70,7 @@ set(euptex_web_srcs
   tex.ch
   tracingstacklevels.ch
   partoken.ch
+  locnull-optimize.ch
   showstream.ch
   zlib-fmt.ch
   etexdir/tex.ech
@@ -89,6 +90,7 @@ set(euptex_ch_srcs
   euptexdir/pdfutils.ch
   euptexdir/pdfstrcmp-eup-post.ch
   euptexdir/suppresserrors.ch
+  eptexdir/unbalanced-braces-eptex.ch
   euptexdir/char-warning-eptex.ch
   tex-binpool.ch
   )

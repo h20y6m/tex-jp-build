@@ -1,6 +1,6 @@
 # CMakeLists.txt for dvipdfm-x
 
-set(VERSION "20240210")
+set(VERSION "20240305")
 
 include(cmake/config.cmake)
 
