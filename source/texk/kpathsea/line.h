@@ -32,6 +32,13 @@ extern "C" {
    with malloc.  */
 extern KPSEDLL string read_line (FILE *f);
 
+#ifdef WIN32
+/* Same as read_line, but faster using *_nolock functions.
+   NOTE: Do not use for stdin (console input),
+   which requires special handling (see kpathsea_win32_getc). */
+extern KPSEDLL string read_line_nolock(FILE* f);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

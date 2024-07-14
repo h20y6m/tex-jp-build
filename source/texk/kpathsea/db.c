@@ -102,18 +102,22 @@ db_build (kpathsea kpse, hash_table_type *table,  const_string db_filename)
   top_dir[len] = 0;
 
   if (db_file) {
+#ifdef WIN32
+    _lock_file(db_file);
+    while ((line = read_line_nolock (db_file)) != NULL) {
+#else /* not WIN32 */
     while ((line = read_line (db_file)) != NULL) {
+#endif /* not WIN32 */
       len = strlen (line);
 
 #if defined(MONOCASE_FILENAMES)
-      for (pp = line; *pp; pp++) {
 #if defined(_WIN32)
-        if (kpathsea_IS_KANJI(kpse, pp))
-          pp++;
-        else
-#endif /* _WIN32 */
+      CharLowerBuff(line, len);
+#else /* not _WIN32 */
+      for (pp = line; *pp; pp++) {
           *pp = TRANSFORM(*pp);
       }
+#endif /* not _WIN32 */
 #endif /* MONOCASE_FILENAMES */
 
       /* A line like `/foo:' = new dir foo.  Allow both absolute (/...)
@@ -157,6 +161,9 @@ db_build (kpathsea kpse, hash_table_type *table,  const_string db_filename)
 
       free (line);
     }
+#ifdef WIN32
+    _unlock_file(db_file);
+#endif /* WIN32 */
 
     xfclose (db_file, db_filename);
 

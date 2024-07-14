@@ -95,3 +95,54 @@ read_line (FILE *f)
 
   return line;
 }
+
+#ifdef WIN32
+/* Almost same read_line, but using *_nolock functions. */
+char *
+read_line_nolock (FILE *f)
+{
+  int c;
+  unsigned limit = BLOCK_SIZE;
+  unsigned loc = 0;
+  char *line = xmalloc (limit);
+
+  while ((c = _getc_nolock (f)) != EOF && c != '\n' && c != '\r') {
+    /* Silently drop null bytes.  */
+    if (c == 0) {
+      continue;
+    }
+
+    line[loc] = c;
+    loc++;
+
+    /* By testing after the assignment, we guarantee that we'll always
+       have space for the null we append below.  We know we always
+       have room for the first char, since we start with BLOCK_SIZE.  */
+    if (loc == limit) {
+      limit += BLOCK_SIZE;
+      line = xrealloc (line, limit);
+    }
+  }
+
+  /* If we read anything, return it, even a partial last-line-if-file
+     which is not properly terminated.  */
+  if (loc == 0 && c == EOF) {
+    /* At end of file.  */
+    free (line);
+    line = NULL;
+  } else { 
+    /* Terminate the string.  We can't represent nulls in the file,
+       but this doesn't matter.  */
+    line[loc] = 0;
+    /* Absorb LF of a CRLF pair. */
+    if (c == '\r') {
+      c = _getc_nolock(f);
+      if (c != '\n') {
+        _ungetc_nolock (c, f);
+      }
+    }
+  }
+
+  return line;
+}
+#endif /* WIN32 */
