@@ -82,6 +82,121 @@ ignore_dir_p (const_string dirname)
   return false;
 }
 
+
+#if defined(_WIN32)
+#define DB_READER
+#endif
+
+#ifdef DB_READER
+
+struct db_reader {
+    char* buf;
+    char* pos;
+    char* end;
+};
+
+static struct db_reader* db_reader_open(const char* filename) {
+    struct db_reader* p = NULL;
+    FILE* fp = NULL;
+    struct stat st;
+    size_t len;
+    memset(&st, 0, sizeof(st));
+
+    p = (struct db_reader*)calloc(1, sizeof(struct db_reader));
+    if (!p) {
+        return NULL;
+    }
+    p->buf = NULL;
+    p->pos = NULL;
+    p->end = NULL;
+
+#if defined(_WIN32)
+    fp = fopen(filename, "rb");
+#else /* !_WIN32 */
+    fp = fopen(filename, "r");
+#endif /* !_WIN32 */
+    if (!fp) {
+        free(p);
+        return NULL;
+    }
+
+    if (fstat(fileno(fp), &st) != 0) {
+        fclose(fp);
+        free(p);
+        return NULL;
+    }
+
+    len = (size_t)st.st_size;
+    p->buf = (char*)calloc(len + 1, 1);
+    if (!p->buf) {
+        fclose(fp);
+        free(p);
+        return NULL;
+    }
+
+    p->pos = p->buf;
+    p->end = p->buf;
+
+    len = fread(p->buf, 1, len, fp);
+    if (ferror(fp)) {
+        fclose(fp);
+        free(p->buf);
+        free(p);
+        return NULL;
+    }
+
+    p->end += len;
+
+#if defined(_WIN32)
+    CharLowerBuff(p->buf, (DWORD)len);
+#endif /* _WIN32 */
+
+    *p->end = '\0';
+    p->end++;
+
+    fclose(fp);
+
+    return p;
+}
+
+static void db_reader_close(struct db_reader* p) {
+    if (p) {
+        free(p->buf);
+        free(p);
+    }
+}
+
+static char* db_reader_get_line(struct db_reader* p) {
+    char* eol;
+    char* ret;
+
+    if (!p) {
+        return NULL;
+    }
+
+    if (p->pos == p->end) {
+        return NULL;
+    }
+
+    eol = (char*)memchr(p->pos, '\n', p->end - p->pos);
+
+    if (eol) {
+        *eol = '\0';
+        if (p->pos != eol && *(eol - 1) == '\r') {
+            *(eol - 1) = '\0';
+        }
+        ret = p->pos;
+        p->pos = eol + 1;
+        return ret;
+    } else {
+        ret = p->pos;
+        p->pos = p->end;
+        return ret;
+    }
+}
+
+#endif /* DB_READER */
+
 /* If no DB_FILENAME, return false (maybe they aren't using this feature).
    Otherwise, add entries from DB_FILENAME to TABLE, and return true.  */
 
@@ -93,18 +208,28 @@ db_build (kpathsea kpse, hash_table_type *table,  const_string db_filename)
   unsigned len = strlen (db_filename) - sizeof (DB_NAME) + 1; /* Keep the /. */
   string top_dir = (string)xmalloc (len + 1);
   string cur_dir = NULL; /* First thing in ls-R might be a filename.  */
+#ifdef DB_READER
+  struct db_reader* db_reader = db_reader_open(db_filename);
+#else /* !DB_READER */
   FILE *db_file = fopen (db_filename, FOPEN_R_MODE);
 #if defined(MONOCASE_FILENAMES)
   string pp;
 #endif /* MONOCASE_FILENAMES */
+#endif /* !DB_READER */
 
   strncpy (top_dir, db_filename, len);
   top_dir[len] = 0;
 
+#ifdef DB_READER
+  if (db_reader) {
+    while ((line = db_reader_get_line (db_reader)) != NULL) {
+#else /* !DB_READER */
   if (db_file) {
     while ((line = read_line (db_file)) != NULL) {
+#endif /* !DB_READER */
       len = strlen (line);
 
+#ifndef DB_READER
 #if defined(MONOCASE_FILENAMES)
       for (pp = line; *pp; pp++) {
 #if defined(_WIN32)
@@ -115,6 +240,7 @@ db_build (kpathsea kpse, hash_table_type *table,  const_string db_filename)
           *pp = TRANSFORM(*pp);
       }
 #endif /* MONOCASE_FILENAMES */
+#endif /* !DB_READER */
 
       /* A line like `/foo:' = new dir foo.  Allow both absolute (/...)
          and explicitly relative (./...) names here.  It's a kludge to
@@ -155,15 +281,25 @@ db_build (kpathsea kpse, hash_table_type *table,  const_string db_filename)
       } /* else ignore blank lines or top-level files
            or files in ignored directories*/
 
+#ifndef DB_READER
       free (line);
+#endif /* !DB_READER */
     }
 
+#ifdef DB_READER
+    db_reader_close (db_reader);
+#else /* !DB_READER */
     xfclose (db_file, db_filename);
+#endif /* !DB_READER */
 
     if (file_count == 0) {
       WARNING1 ("kpathsea: %s: No usable entries in ls-R", db_filename);
       WARNING ("kpathsea: See the manual for how to generate ls-R");
+#ifdef DB_READER
+      db_reader = NULL;
+#else /* !DB_READER */
       db_file = NULL;
+#endif /* !DB_READER */
     } else {
       str_list_add (&(kpse->db_dir_list), xstrdup (top_dir));
     }
@@ -187,7 +323,11 @@ db_build (kpathsea kpse, hash_table_type *table,  const_string db_filename)
 
   free (top_dir);
 
+#ifdef DB_READER
+  return db_reader != NULL;
+#else /* !DB_READER */
   return db_file != NULL;
+#endif /* !DB_READER */
 }
 
 
