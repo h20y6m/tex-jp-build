@@ -1,3 +1,120 @@
+2024-11-20  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebman-w2c.ch: Link to extended WEB manual in TeX Live.
+
+2024-11-01  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebacromac.tex: Purge spurious space(s).
+
+2024-10-06  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill-mini.ch: Fix line/paragraph break.
+
+2024-09-14  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill-mini.ch,
+	* ctwill-w2c.ch,
+	* cweav-w2c.ch,
+	* cweave.w,
+	* cwebacromac.tex,
+	* cwebmac.tex,
+	* refsort.ch: Fix sorting order in Names-of-the-Sections.
+
+2024-08-12  Andreas Scherer  <https://ascherer.github.io>
+
+	* Makefile
+	* comm-{mac,mini,ql,w2c}.ch
+	* comm-w2c.h
+	* common.h
+	* common.w
+	* ctang-{bs,pc,ql,vms,w2c,w32}.ch
+	* ctangle.c
+	* ctangle.w
+	* ctwill-w2c.ch
+	* cweav-{bs,pc,ql,vms,w2c,w32}.ch
+	* cweave.w
+	* cwebman-w2c.ch
+	* cwebman.tex
+	* po/cweb-tl.pot
+	* po/cweb.pot
+	* po/de/cweb-tl.po
+	* po/de/cweb.po
+	* po/it/cweb.po
+	* prod-{cweave,twill}.w
+	* prod.w: CWEB 4.12 release.
+
+2024-08-10  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebacromac.tex,
+	* cwebmac.tex,
+	* texinputs/icwebmac.tex,
+	* texinputs/pdfctproofmac.tex,
+	* texinputs/pdfctwimac.tex: Apply new scanning macros.
+
+2024-08-08  Andreas Scherer  <https://ascherer.github.io>
+
+	* comm-mini.ch,
+	* comm-w2c.ch: Demote 'Extensions' and subsections.
+
+2024-08-07  Andreas Scherer  <https://ascherer.github.io>
+
+	* comm-mini.ch,
+	* comm-w2c.ch: The Index is not an Extension.
+
+2024-08-06  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebacromac.tex,
+	* cwebmac.tex,
+	* cwebman.tex,
+	* texinputs/pdfctproofmac.tex,
+	* texinputs/pdfctwimac.tex: Refine PDF-related macros.
+
+2024-08-02  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill-w2c.ch,
+	* cweav-w2c.ch,
+	* cweave.w: Remove unused 'kludge'.
+
+2024-07-26  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebmac.tex: Reshuffle '\note' macro.
+
+2024-07-24  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebmac.tex,
+	* cwebman-w2c.ch,
+	* cwebman.tex: Recollect '\font' declarations.
+
+2024-07-23  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebman-w2c.ch,
+	* cwebman.tex: Adjust typewriter font size in page headers.
+
+2024-07-23  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebman.tex: Purge header for Appendix C.
+
+2024-07-22  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebman-w2c.ch,
+	* cwebman.tex: Purge unused '\font's.
+
+2024-07-17  Andreas Scherer  <https://ascherer.github.io>
+
+	* twinx.ch: Compile CWEB with G++-14.
+
+2024-07-15  Andreas Scherer  <https://ascherer.github.io>
+
+	* texinputs/pdfwebtocfront.tex: Release file resource early.
+
+2024-07-13  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill-w2c.ch: Avoid double '\date' for CTWILL.
+
+2024-07-10  Andreas Scherer  <https://ascherer.github.io>
+
+	* cwebman-w2c.ch: Add link to WEB manual (and line numbers).
+
 2024-07-06  Andreas Scherer  <https://ascherer.github.io>
 
 	* cwebman-w2c.ch: Add extra macros for HiTeX.

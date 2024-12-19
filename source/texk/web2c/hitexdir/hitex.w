@@ -224,7 +224,6 @@
 @s alpha_file int
 @s byte_file int
 @s word_file int
-@s int8_t int
 @s uint8_t int
 @s int16_t int
 @s uint16_t int
@@ -249,10 +248,6 @@
 @s in TeX
 @s line normal
 @s to   do
-
-\def\contentspagenumber{0}
-\def\tocpages{3} % HiTeX has a long ToC
-\pageno=\contentspagenumber \advance \pageno by \tocpages
 
 @* Introduction.
 This is Hi\TeX, a program derived from \TeX, extending its capabilities
@@ -436,18 +431,20 @@ portions of the program.
 
 The program starts with inserting header files and occassionaly a function
 must be placed before declaring \TeX's macros, because the function
-uses identifiers that \TeX\ will declare as macros.
+uses identifiers that \TeX will declare as macros.
 
 @p @<Header files and function declarations@>@;
 @h
-enum {@+@<Constants in the outer block@>@+};
+enum {@<Constants in the outer block@>@;
+      @!empty_string=256 /*the empty string follows after 256 characters*/
+};
 @<Types in the outer block@>@;
 @<Forward declarations@>@;
 @<Global variables@>@;
 @#
 static void initialize(void) /*this procedure gets things started properly*/
   {@+@<Local variables for initialization@>@;
-  @<Initialize whatever \TeX\ might access@>@;
+  @<Initialize whatever \TeX\ might access@>;
   } @#
 @<Basic printing procedures@>@;
 @<Error handling procedures@>@;
@@ -562,7 +559,6 @@ in production versions of \TeX.
 @!file_name_size=1024, /*file names shouldn't be longer than this*/
 @!xchg_buffer_size=64, /*must be at least 64*/
    /*size of |eight_bits| buffer for exchange with system routines*/
-@!empty_string=256 /*the empty string follows after 256 characters*/
 
 @ Like the preceding parameters, the following quantities can be changed
 at compile time to extend or reduce \TeX's capacity. But if they are changed,
@@ -572,7 +568,7 @@ to generate new tables for the production \TeX\ program.
 One can't simply make helter-skelter changes to the following constants,
 since certain rather complex initialization
 numbers are computed from them. They are defined here using
-\.{WEB} macros, instead of being put into \PASCAL's |const| list, in order to
+\.{WEB} macros, instead of being put into the above |enum| list in order to
 emphasize this distinction.
 
 @d mem_bot 0 /*smallest index in the |mem| array dumped by \.{INITEX};
@@ -634,7 +630,7 @@ because some fussy \PASCAL\ compilers will complain about redundant labels.
 @d negate(A) A=-A /*change the sign of a variable*/
 @d loop @+while (true) @+ /*repeat over and over until a |goto| happens*/
 @f loop else
-   /*\.{WEB}'s |loop| acts like `\ignorespaces|while true do|\unskip'*/
+   /*\.{WEB}'s |else| acts like `\ignorespaces|while true do|\unskip'*/
 @d do_nothing  /*empty statement*/
 @d empty 0 /*symbolic name for a null constant*/
 
@@ -1334,7 +1330,7 @@ while (j < str_start[s+1])
 result=true;
 not_found: return result;
 }
-@#@<Declare \Prote\ procedures for strings@>@;
+@t\4@>@<Declare \Prote\ procedures for strings@>@;
 
 @ The initial values of |str_pool|, |str_start|, |pool_ptr|,
 and |str_ptr| are computed by the \.{INITEX} program, based in part
@@ -1425,8 +1421,6 @@ declaration.
 @<Forward declarations@>=
 static int s_no(const char *str);
 
-@ (Empty section to keep numbering intact.)
-
 @* On-line and off-line printing.
 Messages that are sent to a user's terminal and to the transcript-log file
 are produced by several `|print|' procedures. These procedures will
@@ -1498,11 +1492,9 @@ for terminal output, and it is possible to adhere to those conventions
 by changing |wterm|, |wterm_ln|, and |wterm_cr| in this section.
 @^system dependencies@>
 
-@s sizeof x
-
 @<Basic printing procedures@>=
-#define @[put(F)@]    @[fwrite(&((F).d),sizeof((F).d),1,(F).f)@]
-#define @[get(F)@]    @[fread(&((F).d),sizeof((F).d),1,(F).f)@]
+#define @[put(F)@]    @[fwrite(&((F).d)@],@[sizeof((F).d),1,(F).f)@]@;
+#define @[get(F)@]    @[(void)fread(&((F).d),sizeof((F).d),1,(F).f)@]
 
 #define @[pascal_close(F)@]    @[fclose((F).f)@]
 #define @[eof(F)@]    @[feof((F).f)@]
@@ -1708,8 +1700,8 @@ if (n < 0)
       }
     }
   }
-do {dig[k]=n%10;n=n/10;incr(k);
-} while (!(n==0));
+@/do@+{dig[k]=n%10;n=n/10;incr(k);
+}@+ while (!(n==0));
 print_the_digs(k);
 }
 
@@ -1727,8 +1719,8 @@ print_char('0'+(n%10));
    /*prints a positive integer in hexadecimal form*/
 {@+int k; /*index to current digit; we assume that $0\le n<16^{22}$*/
 k=0;print_char('"');
-do {dig[k]=n%16;n=n/16;incr(k);
-} while (!(n==0));
+@/do@+{dig[k]=n%16;n=n/16;incr(k);
+}@+ while (!(n==0));
 print_the_digs(k);
 }
 
@@ -1804,7 +1796,7 @@ $$\vbox{\halign{#\hfil\cr
 |help3("This is the first line of my offer to help.")|\cr
 |("This is the second line. I'm trying to")|\cr
 |("explain the best way for you to proceed.");|\cr
-|error();|\cr}}$$
+|error;|\cr}}$$
 A two-line help message would be given using |help2|, etc.; these informal
 helps should use simple vocabulary that complements the words used in the
 official error message that was printed. (Outside the U.S.A., the help
@@ -2010,6 +2002,7 @@ case '0': case '1': case '2': case '3':
   case '4': case '5': case '6': case '7':
   case '8': case '9': if (deletions_allowed)
   @<Delete \(c)|c-"0"| tokens and |goto resume|@>@;@+break;
+@t\4\4@>@;
 #ifdef @!DEBUG
 case 'D': {@+debug_help();goto resume;@+}
 #endif
@@ -2102,8 +2095,8 @@ show_context();goto resume;
 else{@+if (help_ptr==0)
     help2("Sorry, I don't know how to help in this situation.",@/
     @t\kern1em@>"Maybe you should try asking a human?");
-  do {decr(help_ptr);print(help_line[help_ptr]);print_ln();
-  } while (!(help_ptr==0));
+  @/do@+{decr(help_ptr);print(help_line[help_ptr]);print_ln();
+  }@+ while (!(help_ptr==0));
   }
 help4("Sorry, I already gave what help I could...",@/
   "Maybe you should try asking a human?",@/
@@ -2272,7 +2265,7 @@ positions from the right end of a binary computer word.
 
 @<Types...@>=
 typedef int scaled; /*this type is used for scaled integers*/
-typedef uint32_t nonnegative_integer; /*$0\le x<2^{31}$*/
+typedef int32_t nonnegative_integer; /*$0\le x<2^{31}$*/
 typedef int8_t small_number; /*this type is self-explanatory*/
 
 @ The following function is used to create a scaled integer from a given decimal
@@ -2310,9 +2303,9 @@ if (s < 0)
 print_int(s/unity); /*print the integer part*/
 print_char('.');
 s=10*(s%unity)+5;delta=10;
-do {if (delta > unity) s=s+0100000-50000; /*round the last digit*/
+@/do@+{if (delta > unity) s=s+0100000-50000; /*round the last digit*/
 print_char('0'+(s/unity));s=10*(s%unity);delta=delta*10;
-} while (!(s <= delta));
+}@+ while (!(s <= delta));
 }
 
 @ Physical sizes that a \TeX\ user specifies for portions of documents are
@@ -2429,7 +2422,7 @@ computing at most 1095 distinct values, but that is plenty.
 
 @d inf_bad 10000 /*infinitely bad value*/
 
-@p @<Declare \Prote\ arithmetic routines@>@;
+@p @<Declare \Prote\ arithmetic routines@>@/
 static halfword badness(scaled @!t, scaled @!s) /*compute badness, given |t >= 0|*/
 {@+int r; /*approximation to $\alpha t/s$, where $\alpha^3\approx
   100\cdot2^{18}$*/
@@ -2464,16 +2457,12 @@ routines cited there must be modified to allow negative glue ratios.)
 @d unfix(A) ((double)(A)) /*convert from |glue_ratio| to type |double|*/
 @d fix(A) ((glue_ratio)(A)) /*convert from |double| to type |glue_ratio|*/
 @d float_constant(A) ((double)(A)) /*convert |int| constant to |double|*/
-@#
-@d perror e@&r@&r@&o@&r /* this is a \.{CWEB} coding trick: */
-@f perror error /* `\&{perror}' will be equivalent to `\&{error}' */
-@f error x /* but `|error|' will not be treated as a reserved word */
 
 @<Types...@>=
 #if __SIZEOF_FLOAT__==4
 typedef float float32_t;
 #else
-#perror @=float type must have size 4@>
+#error  @=float type must have size 4@>
 #endif
 typedef float @!glue_ratio; /*one-word representation of a glue expansion factor*/
 
@@ -2583,29 +2572,25 @@ typedef uint16_t quarterword; /*1/4 of a word*/
 typedef int32_t halfword; /*1/2 of a word*/
 typedef int8_t two_choices; /*used when there are two variants in a record*/
 typedef int8_t four_choices; /*used when there are four variants in a record*/
-@#
-typedef struct {
+typedef struct { @;@/
   halfword @!rh;
   union {
   halfword @!lh;
   struct { quarterword @!b0;quarterword @!b1;} ;
   };} two_halves;
-@#
-typedef struct {
+typedef struct { @;@/
   quarterword @!b0;
   quarterword @!b1;
   quarterword @!b2;
   quarterword @!b3;
   } four_quarters;
-@#
-typedef struct {
+typedef struct { @;@/
   union {
   int @!i;
   glue_ratio @!gr;
   two_halves @!hh;
   four_quarters @!qqqq;
   };} memory_word;
-@#
 typedef struct {@+FILE *f;@+memory_word@,d;@+} word_file;
 
 @ When debugging, we may want to print a |memory_word| without knowing
@@ -2788,11 +2773,11 @@ one-word nodes that starts at position |p|.
 {@+pointer @!q, @!r; /*list traversers*/
 if (p!=null)
   {@+r=p;
-  do {q=r;r=link(r);
+  @/do@+{q=r;r=link(r);
 #ifdef @!STAT
 decr(dyn_used);
 #endif
-  } while (!(r==null)); /*now |q| is the last node on the list*/
+  }@+ while (!(r==null)); /*now |q| is the last node on the list*/
   link(q)=avail;avail=p;
   }
 }
@@ -2837,11 +2822,11 @@ pointer @!q; /*the node physically after node |p|*/
 int @!r; /*the newly allocated node, or a candidate for this honor*/
 int @!t; /*temporary register*/
 restart: p=rover; /*start at some free node in the ring*/
-do {@<Try to allocate within node |p| and its physical successors, and
+@/do@+{@<Try to allocate within node |p| and its physical successors, and
 |goto found| if allocation was possible@>;
 @^inner loop@>
 p=rlink(p); /*move to the next node in the ring*/
-} while (!(p==rover)); /*repeat until the whole list has been traversed*/
+}@+ while (!(p==rover)); /*repeat until the whole list has been traversed*/
 if (s==010000000000)
   {@+return max_halfword;
   }
@@ -3334,7 +3319,7 @@ current \.{\\lineskip}.
 pointer @!q; /*the glue specification*/
 p=get_node(small_node_size);type(p)=glue_node;subtype(p)=n+1;
 leader_ptr(p)=null;@/
-q=@[@<Current |mem| equivalent of glue parameter number |n|@>@];
+q=@<Current |mem| equivalent of glue parameter number |n|@>@t@>;
 glue_ptr(p)=q;incr(glue_ref_count(q));
 return p;
 }
@@ -3373,8 +3358,6 @@ kerns inserted from font information or math mode calculations) or |explicit|
 (for kerns inserted from \.{\\kern} and \.{\\/} commands) or |acc_kern|
 (for kerns inserted from non-math accents) or |mu_glue| (for kerns
 inserted from \.{\\mkern} specifications in math formulas).
-
-@s explicit true
 
 @d kern_node 11 /*|type| of a kern node*/
 @d explicit 1 /*|subtype| of kern nodes from \.{\\kern} and \.{\\/}*/
@@ -3591,7 +3574,7 @@ done1:
 
 @ @<Check variable-size...@>=
 p=rover;q=null;clobbered=false;
-do {if ((p >= lo_mem_max)||(p < mem_min)) clobbered=true;
+@/do@+{if ((p >= lo_mem_max)||(p < mem_min)) clobbered=true;
   else if ((rlink(p) >= lo_mem_max)||(rlink(p) < mem_min)) clobbered=true;
   else if (!(is_empty(p))||(node_size(p) < 2)||@|
    (p+node_size(p) > lo_mem_max)||@|(llink(rlink(p))!=p)) clobbered=true;
@@ -3608,7 +3591,7 @@ for (q=p; q<=p+node_size(p)-1; q++)  /*mark all locations free*/
   is_free[q]=true;
   }
 q=p;p=rlink(p);
-} while (!(p==rover));
+}@+ while (!(p==rover));
 done2:
 
 @ @<Check flags...@>=
@@ -3703,13 +3686,13 @@ while (p > mem_min)
         {@+if ((font(p) < font_base)||(font(p) > font_max))
           print_char('*');
 @.*\relax@>
-        else@<Print the font identifier for |font(p)|@>@;
+        else@<Print the font identifier for |font(p)|@>;
         print_char(' ');font_in_short_display=font(p);
         }
       print_ASCII(qo(character(p)));
       }
     }
-  else@<Print a short indication of the contents of node |p|@>@;
+  else@<Print a short indication of the contents of node |p|@>;
   p=link(p);
   }
 }
@@ -3742,7 +3725,7 @@ its reference count, and one to print a rule dimension.
 {@+if (p > mem_end) print_esc("CLOBBERED.");
 else{@+if ((font(p) < font_base)||(font(p) > font_max)) print_char('*');
 @.*\relax@>
-  else@<Print the font identifier for |font(p)|@>@;
+  else@<Print the font identifier for |font(p)|@>;
   print_char(' ');print_ASCII(qo(character(p)));
   }
 }
@@ -3882,7 +3865,7 @@ else switch (type(p)) {
   case disc_node: @<Display discretionary |p|@>@;@+break;
   case mark_node: @<Display mark |p|@>@;@+break;
   case adjust_node: @<Display adjustment |p|@>@;@+break;
-  @/@t\4@>@<Cases of |show_node_list| that arise in mlists only@>@;
+  @t\4@>@<Cases of |show_node_list| that arise in mlists only@>@;
   default:print("Unknown node type!");
   }
 
@@ -4081,7 +4064,7 @@ specification is being withdrawn.
   }
 
 @p static void delete_glue_ref(pointer @!p) /*|p| points to a glue specification*/
-fast_delete_glue_ref(p)@;
+fast_delete_glue_ref(p)
 static void delete_xdimen_ref(pointer @!p) /*|p| points to a xdimen specification*/
 {@+if (p==null) return;
   if (xdimen_ref_count(p)==null) free_node(p, xdimen_node_size);
@@ -4122,7 +4105,7 @@ while (p!=null)
       flush_node_list(post_break(p));
       } @+break;
     case adjust_node: flush_node_list(adjust_ptr(p));@+break;
-    @/@t\4@>@<Cases of |flush_node_list| that arise in mlists only@>@;
+    @t\4@>@<Cases of |flush_node_list| that arise in mlists only@>@;
     default:confusion("flushing");
 @:this can't happen flushing}{\quad flushing@>
     } @/
@@ -5022,7 +5005,7 @@ else switch (chr_code) {
   case every_vbox_loc: print_esc("everyvbox");@+break;
   case every_job_loc: print_esc("everyjob");@+break;
   case every_cr_loc: print_esc("everycr");@+break;
-  @/@t\4@>@<Cases of |assign_toks| for |print_cmd_chr|@>@;
+  @/@<Cases of |assign_toks| for |print_cmd_chr|@>@/
   default:print_esc("errhelp");
   } @+break;
 
@@ -5350,7 +5333,7 @@ case right_hyphen_min_code: print_esc("righthyphenmin");@+break;
 case holding_inserts_code: print_esc("holdinginserts");@+break;
 case error_context_lines_code: print_esc("errorcontextlines");@+break;
 case tracing_stack_levels_code: print_esc("tracingstacklevels");@+break;
-@/@t\4@>@<Cases for |print_param|@>@;
+@/@<Cases for |print_param|@>@/
 default:print("[unknown integer parameter!]");
 }
 }
@@ -5503,7 +5486,6 @@ defined by |SOURCE_DATE_EPOCH|.
 @^reference time@>
 @^system dependencies@>
 \TeX\ Live calls |tl_now| to obtain the current time as a |tm| structure.
-@s tm int
 @p static void fix_date_and_time(void)
 {@+ struct tm *t=tl_now();
   time=sys_time= t->tm_hour*60+t->tm_min;/*minutes since midnight*/
@@ -5707,9 +5689,8 @@ print_char('=');print_scaled(eqtb[n].sc);print("pt");
 @ Here is a procedure that displays the contents of |eqtb[n]|
 symbolically.
 
-@p @<Declare the procedure called |print_cmd_chr|@>@;
+@p @t\4@>@<Declare the procedure called |print_cmd_chr|@>@;@/
 #ifdef @!STAT
-@+@t}\6\4\4{@>
 static void show_eqtb(pointer @!n)
 {@+if (n < active_base) print_char('?'); /*this can't happen*/
 else if (n < glue_base) @<Show equivalent |n|, in region 1 or 2@>@;
@@ -5834,10 +5815,10 @@ found: return p;
 
 @ @<Insert a new control...@>=
 {@+if (text(p) > 0)
-  {@+do {if (hash_is_full) overflow("hash size", hash_size);
+  {@+@/do@+{if (hash_is_full) overflow("hash size", hash_size);
 @:TeX capacity exceeded hash size}{\quad hash size@>
   decr(hash_used);
-  } while (!(text(hash_used)==0)); /*search for an empty location in |hash|*/
+  }@+ while (!(text(hash_used)==0)); /*search for an empty location in |hash|*/
   next(p)=hash_used;p=hash_used;
   }
 str_room(l);d=cur_length;
@@ -6055,7 +6036,7 @@ case end_group: print_esc("endgroup");@+break;
 case ex_space: print_esc(" ");@+break;
 case expand_after: switch (chr_code) {
 case 0: print_esc("expandafter");@+break;
-@/@t\4@>@<Cases of |expandafter| for |print_cmd_chr|@>@;
+@/@<Cases of |expandafter| for |print_cmd_chr|@>@/
 } @+break; /*there are no other cases*/
 case halign: print_esc("halign");@+break;
 case hrule: print_esc("hrule");@+break;
@@ -6075,17 +6056,17 @@ case no_expand: print_esc("noexpand");@+break;
 case non_script: print_esc("nonscript");@+break;
 case omit: print_esc("omit");@+break;
 case radical: print_esc("radical");@+break;
-case read_to_cs: if (chr_code==0) print_esc("read");
-  else @<Cases of |read| for |print_cmd_chr|@>;@+break;
+case read_to_cs: if (chr_code==0) print_esc("read")
+  @<Cases of |read| for |print_cmd_chr|@>;@+break;
 case relax: print_esc("relax");@+break;
 case set_box: print_esc("setbox");@+break;
 case set_prev_graf: print_esc("prevgraf");@+break;
 case set_shape: switch (chr_code) {
   case par_shape_loc: print_esc("parshape");@+break;
-  @/@t\4@>@<Cases of |set_shape| for |print_cmd_chr|@>@;
+  @<Cases of |set_shape| for |print_cmd_chr|@>@;@/
   } @+break; /*there are no other cases*/
-case the: if (chr_code==0) print_esc("the");
-  else @<Cases of |the| for |print_cmd_chr|@>;@+break;
+case the: if (chr_code==0) print_esc("the")
+  @<Cases of |the| for |print_cmd_chr|@>;@+break;
 case toks_register: @<Cases of |toks_register| for |print_cmd_chr|@>@;@+break;
 case vadjust: print_esc("vadjust");@+break;
 case valign: print_esc("valign");@+break;
@@ -6106,7 +6087,7 @@ Meanwhile, this is a convenient place to catch up on something we were unable
 to do before the hash table was defined:
 
 @<Print the font identifier for |font(p)|@>=
-printn_esc(font_id_text(font(p)));
+printn_esc(font_id_text(font(p)))
 
 @* Saving and restoring equivalents.
 The nested structure provided by `$\.{\char'173}\ldots\.{\char'175}$' groups
@@ -6291,7 +6272,7 @@ case shape_ref: {@+q=equiv_field(w); /*we need to free a \.{\\parshape} block*/
   if (q!=null) free_node(q, info(q)+info(q)+1);
   } @+break; /*such a block is |2 n+1| words long, where |n==info(q)|*/
 case box_ref: flush_node_list(equiv_field(w));@+break;
-@/@t\4@>@<Cases for |eq_destroy|@>@;
+@/@<Cases for |eq_destroy|@>@/
 default:do_nothing;
 }
 }
@@ -6329,7 +6310,7 @@ the call, since |eq_save| makes the necessary test.
 #ifdef @!STAT
 #define  assign_trace(A, B) if (tracing_assigns > 0) restore_trace(A, B);
 #else
-#define  assign_trace(A, B) @[@]
+#define  assign_trace(A, B)
 #endif
 
 static void eq_define(pointer @!p, quarterword @!t, halfword @!e)
@@ -6834,7 +6815,7 @@ case endv: print("end of alignment template");@+break;
 case spacer: chr_cmd("blank space ")@;@+break;
 case letter: chr_cmd("the letter ")@;@+break;
 case other_char: chr_cmd("the character ")@;@+break;
-@/@t\4@>@<Cases of |print_cmd_chr| for symbolic printing of primitives@>@;
+@t\4@>@<Cases of |print_cmd_chr| for symbolic printing of primitives@>@/
 default:print("[unknown command code!]");
 }
 }
@@ -7572,7 +7553,7 @@ actions.
 in_open=0;open_parens=0;max_buf_stack=0;
 grp_stack[0]=0;if_stack[0]=null;
 param_ptr=0;max_param_stack=0;
-first=buf_size;do {buffer[first]=0;decr(first);} while (!(first==0));
+first=buf_size;@/do@+{buffer[first]=0;decr(first);}@+ while (!(first==0));
 scanner_status=normal;warning_index=null;first=1;
 state=new_line;start=1;index=0;line=0;name=0;
 force_eof=false;
@@ -7783,7 +7764,7 @@ and set |state:=mid_line|@>@;@+break;
 any_state_plus(sup_mark): @<If this |sup_mark| starts an expanded character
 like~\.{\^\^A} or~\.{\^\^df}, then |goto reswitch|, otherwise set |state:=mid_line|@>@;@+break;
 any_state_plus(invalid_char): @<Decry the invalid character and |goto restart|@>@;
-@/@t\4@>@<Handle situations involving spaces, braces, changes of state@>@;
+@t\4@>@<Handle situations involving spaces, braces, changes of state@>@;
 default:do_nothing;
 }
 
@@ -7942,8 +7923,8 @@ the buffer left two or three places.
 }
 
 @ @<Scan ahead in the buffer...@>=
-{@+do {cur_chr=buffer[k];cat=cat_code(cur_chr);incr(k);
-} while (!((cat!=letter)||(k > limit)));
+{@+@/do@+{cur_chr=buffer[k];cat=cat_code(cur_chr);incr(k);
+}@+ while (!((cat!=letter)||(k > limit)));
 @<If an expanded...@>;
 if (cat!=letter) decr(k);
    /*now |k| points to first nonletter*/
@@ -8188,7 +8169,7 @@ case top_bot_mark: @<Insert the \(a)appropriate mark text into the scanner@>@;@+
 case expand_after: switch (cur_chr) {
 case 0: @<Expand the token after the next token@>@;@+break;
 case 1: @<Negate a boolean conditional and |goto reswitch|@>@;@+break;
-@/@t\4@>@<Cases for |expandafter|@>@;
+@/@<Cases for |expandafter|@>@/
 } @+break; /*there are no other cases*/
 case no_expand: @<Suppress expansion of the next token@>@;@+break;
 case cs_name: @<Manufacture a control sequence name@>@;@+break;
@@ -8252,9 +8233,9 @@ the variables |p| and |q| are reserved for token-list building.
 @ @<Manufacture a control...@>=
 {@+r=get_avail();p=r; /*head of the list of characters*/
 incr(incsname_state);
-do {get_x_token();
+@/do@+{get_x_token();
 if (cur_cs==0) store_new_token(cur_tok);
-} while (!(cur_cs!=0));
+}@+ while (!(cur_cs!=0));
 if (cur_cmd!=end_cs_name) @<Complain about missing \.{\\endcsname}@>;
 decr(incsname_state);
 @<Look up the characters of list |r| in the hash table, and set |cur_cs|@>;
@@ -8312,15 +8293,15 @@ primitive("endinput", input, 1);@/
 @!@:end\_input\_}{\.{\\endinput} primitive@>
 
 @ @<Cases of |print_cmd_chr|...@>=
-case input: if (chr_code==0) print_esc("input");
-  else @<Cases of |input| for |print_cmd_chr|@>@;
+case input: if (chr_code==0) print_esc("input")
+  @/@<Cases of |input| for |print_cmd_chr|@>;@/
   else print_esc("endinput");@+break;
 
 @ @<Initiate or terminate input...@>=
-if (cur_chr==1) force_eof=true;
-else @<Cases for |input|@>@;
+if (cur_chr==1) force_eof=true
+@/@<Cases for |input|@>;@/
 else if (name_in_progress) insert_relax();
-else start_input();
+else start_input()
 
 @ Sometimes the expansion looks too far ahead, so we want to insert
 a harmless \.{\\relax} into the user's input.
@@ -8530,7 +8511,7 @@ a string that will delimit the next parameter.
 {@+scanner_status=matching;unbalance=0;
 long_state=eq_type(cur_cs);
 if (long_state >= outer_call) long_state=long_state-2;
-do {link(temp_head)=null;
+@/do@+{link(temp_head)=null;
 if ((info(r) > match_token+255)||(info(r) < match_token)) s=null;
 else{@+match_chr=info(r)-match_token;s=link(r);r=s;
   p=temp_head;m=0;
@@ -8538,7 +8519,7 @@ else{@+match_chr=info(r)-match_token;s=link(r);r=s;
 @<Scan a parameter until its delimiter string has been found; or, if |s=null|,
 simply scan the delimiter string@>;@/
  /*now |info(r)| is a token whose command code is either |match| or |end_match|*/
-} while (!(info(r)==end_match_token));
+}@+ while (!(info(r)==end_match_token));
 }
 
 @ If |info(r)| is a |match| or |end_match| command, it cannot be equal to
@@ -8638,7 +8619,7 @@ the rules.
 if (s!=r)
   if (s==null) @<Report an improper use of the macro and abort@>@;
   else{@+t=s;
-    do {store_new_token(info(t));incr(m);u=link(t);v=s;
+    @/do@+{store_new_token(info(t));incr(m);u=link(t);v=s;
     loop@+{@+if (u==r)
         if (cur_tok!=info(v)) goto done;
         else{@+r=link(v);goto resume;
@@ -8647,7 +8628,7 @@ if (s!=r)
       u=link(u);v=link(v);
       }
     done: t=link(t);
-    } while (!(t==r));
+    }@+ while (!(t==r));
     r=s; /*at this point, no tokens are recently matched*/
     }
 
@@ -8739,7 +8720,8 @@ if (cur_cmd!=left_brace)
 }
 
 @ @<Get the next non-blank non-relax non-call token@>=
-do get_x_token(); while (!((cur_cmd!=spacer)&&(cur_cmd!=relax)))
+@/do@+{get_x_token();
+}@+ while (!((cur_cmd!=spacer)&&(cur_cmd!=relax)))
 
 @ The |scan_optional_equals| routine looks for an optional `\.=' sign preceded
 by optional spaces; `\.{\\relax}' is not ignored here.
@@ -8750,7 +8732,8 @@ if (cur_tok!=other_token+'=') back_input();
 }
 
 @ @<Get the next non-blank non-call token@>=
-do get_x_token(); while (!(cur_cmd!=spacer))
+@/do@+{get_x_token();
+}@+ while (!(cur_cmd!=spacer))
 
 @ In case you are getting bored, here is a slightly less trivial routine:
 Given a string of lowercase letters, like `\.{pt}' or `\.{plus}' or
@@ -8809,9 +8792,9 @@ have to declare |scan_int| as a |forward| procedure. A few other
 procedures are also declared at this point.
 
 @p static void scan_int(void); /*scans an integer value*/
-@#@<Declare procedures that scan restricted classes of integers@>@;
-@<Declare \eTeX\ procedures for scanning@>@;
-@<Declare procedures that scan font-related stuff@>@;
+@t\4\4@>@<Declare procedures that scan restricted classes of integers@>@;
+@t\4\4@>@<Declare \eTeX\ procedures for scanning@>@;
+@t\4\4@>@<Declare procedures that scan font-related stuff@>@;
 
 @ \TeX\ doesn't know exactly what to expect when |scan_something_internal|
 begins.  For example, an integer or dimension or glue value could occur
@@ -9009,9 +8992,9 @@ primitive("badness", last_item, badness_code);
 @ @<Cases of |print_cmd_chr|...@>=
 case set_aux: if (chr_code==vmode) print_esc("prevdepth");
 @+else print_esc("spacefactor");@+break;
-case set_page_int: if (chr_code==0) print_esc("deadcycles");
-else @<Cases of |set_page_int| for |print_cmd_chr|@>@;
-else print_esc("insertpenalties");@+break;
+case set_page_int: if (chr_code==0) print_esc("deadcycles")
+@/@<Cases of |set_page_int| for |print_cmd_chr|@>;@/
+@+else print_esc("insertpenalties");@+break;
 case set_box_dimen: if (chr_code==width_offset) print_esc("wd");
 else if (chr_code==height_offset) print_esc("ht");
 else print_esc("dp");@+break;
@@ -9020,7 +9003,7 @@ case last_item: switch (chr_code) {
   case dimen_val: print_esc("lastkern");@+break;
   case glue_val: print_esc("lastskip");@+break;
   case input_line_no_code: print_esc("inputlineno");@+break;
-  @/@t\4@>@<Cases of |last_item| for |print_cmd_chr|@>@;
+  @/@<Cases of |last_item| for |print_cmd_chr|@>@/
   default:print_esc("badness");
   } @+break;
 
@@ -9042,8 +9025,8 @@ else if (m==vmode)
 else scanned_result(space_factor, int_val)
 
 @ @<Fetch the |dead_cycles| or the |insert_penalties|@>=
-{@+if (m==0) cur_val=dead_cycles;
-else @<Cases for `Fetch the |dead_cycles| or the |insert_penalties|'@>@;
+{@+if (m==0) cur_val=dead_cycles
+@/@<Cases for `Fetch the |dead_cycles| or the |insert_penalties|'@>;@/
 else cur_val=insert_penalties;
 cur_val_level=int_val;
 }
@@ -9094,14 +9077,14 @@ else if (m >= input_line_no_code)
  if (m >= eTeX_glue) @<Process an expression and |return|@>@;
  else if (m >= eTeX_dim)
   {@+switch (m) {
-  @/@t\4@>@<Cases for fetching a dimension value@>@;
+  @/@<Cases for fetching a dimension value@>@/
   }  /*there are no other cases*/
   cur_val_level=dimen_val;
   }
  else{@+switch (m) {
   case input_line_no_code: cur_val=line;@+break;
   case badness_code: cur_val=last_badness;@+break;
-  @/@t\4@>@<Cases for fetching an integer value@>@;
+  @/@<Cases for fetching an integer value@>@/
   }  /*there are no other cases*/
   cur_val_level=int_val;
   }
@@ -9326,11 +9309,11 @@ if (negative) negate(cur_val);
 
 @ @<Get the next non-blank non-sign token...@>=
 negative=false;
-do {@<Get the next non-blank non-call token@>;
+@/do@+{@<Get the next non-blank non-call token@>;
 if (cur_tok==other_token+'-')
   {@+negative=!negative;cur_tok=other_token+'+';
   }
-} while (!(cur_tok!=other_token+'+'));
+}@+ while (!(cur_tok!=other_token+'+'))
 
 @ A space is ignored after an alphabetic character constant, so that
 such constants behave like numeric ones.
@@ -9451,7 +9434,7 @@ int @!f; /*numerator of a fraction whose denominator is $2^{16}$*/
 f=0;arith_error=false;cur_order=normal;negative=false;
 cur_hfactor=cur_vfactor=0;
 if (!shortcut)
-  {@+@<Get the next non-blank non-sign...@>@;
+  {@+@<Get the next non-blank non-sign...@>;
   if ((cur_cmd >= min_internal)&&(cur_cmd <= max_internal))
     @<Fetch an internal dimension and |goto attach_sign|, or fetch an internal
 integer@>@;
@@ -9690,7 +9673,7 @@ most of the work has already been done.
 bool negative; /*should the answer be negated?*/
 pointer @!q; /*new glue specification*/
 bool @!mu; /*does |level==mu_val|?*/
-mu=(level==mu_val);@<Get the next non-blank non-sign...@>@;
+mu=(level==mu_val);@<Get the next non-blank non-sign...@>;
 if ((cur_cmd >= min_internal)&&(cur_cmd <= max_internal))
   {@+scan_something_internal(level, negative);
   if (cur_val_level >= glue_val)
@@ -9870,7 +9853,7 @@ case convert: switch (chr_code) {
   case font_name_code: print_esc("fontname");@+break;
   case job_name_code: print_esc("jobname");@+break;
   case eTeX_revision_code: print_esc("eTeXrevision");@+break;
-  @/@t\4@>@<Cases of |convert| for |print_cmd_chr|@>@;
+  @/@<Cases of |convert| for |print_cmd_chr|@>@/
   } @+break;
 
 @ The procedure |conv_toks| uses |str_toks| to insert the token list
@@ -9901,7 +9884,7 @@ case string_code: case meaning_code: {@+save_scanner_status=scanner_status;
 case font_name_code: scan_font_ident();@+break;
 case job_name_code: if (job_name==0) open_log_file();@+break;
 case eTeX_revision_code: do_nothing;@+break;
-@/@t\4@>@<Cases of `Scan the argument for command |c|'@>@;
+@/@<Cases of `Scan the argument for command |c|'@>@/
 }  /*there are no other cases*/
 
 @ @<Print the result of command |c|@>=
@@ -9919,7 +9902,7 @@ case font_name_code: {@+printn(font_name[cur_val]);
   } @+break;
 case eTeX_revision_code: print(eTeX_revision);@+break;
 case job_name_code: printn(job_name);@+break;
-@/@t\4@>@<Cases of `Print the result of command |c|'@>@;
+@/@<Cases of `Print the result of command |c|'@>@/
 }  /*there are no other cases*/
 
 @ Now we can't postpone the difficulties any longer; we must bravely tackle
@@ -10095,13 +10078,13 @@ p=def_ref; /*the reference count*/
 store_new_token(end_match_token);
 if ((n < 0)||(n > 15)) m=16;@+else m=n;
 s=align_state;align_state=1000000; /*disable tab marks, etc.*/
-do @<Input and store tokens from the next line of the file@>@;
-while (!(align_state==1000000));
+@/do@+{@<Input and store tokens from the next line of the file@>;
+}@+ while (!(align_state==1000000));
 cur_val=def_ref;scanner_status=normal;align_state=s;
 }
 
 @ @<Input and store tokens from the next line of the file@>=
-{begin_file_reading();name=m+1;
+begin_file_reading();name=m+1;
 if (read_open[m]==closed) @<Input for \.{\\read} from the terminal@>;
 else if (read_open[m]==just_open) @<Input the first line of |read_file[m]|@>@;
 else@<Input the next line of |read_file[m]|@>;
@@ -10114,12 +10097,12 @@ loop@+{@+get_token();
   if (cur_tok==0) goto done;
      /*|cur_cmd==cur_chr==0| will occur at the end of the line*/
   if (align_state < 1000000)  /*unmatched `\.\}' aborts the line*/
-    {@+do get_token(); while (!(cur_tok==0));
+    {@+@/do@+{get_token();}@+ while (!(cur_tok==0));
     align_state=1000000;goto done;
     }
   store_new_token(cur_tok);
   }
-done: end_file_reading();}
+done: end_file_reading()
 
 @ Here we input on-line into the |buffer| array, prompting the user explicitly
 if |n >= 0|.  The value of |n| is set negative so that additional prompts
@@ -10237,7 +10220,7 @@ switch (chr_code%unless_code) {
   case if_true_code: print_esc("iftrue");@+break;
   case if_false_code: print_esc("iffalse");@+break;
   case if_case_code: print_esc("ifcase");@+break;
-  @/@t\4@>@<Cases of |if_test| for |print_cmd_chr|@>@;
+  @/@<Cases of |if_test| for |print_cmd_chr|@>@/
   default:print_esc("if");
   }
 } @+break;
@@ -10418,7 +10401,7 @@ case if_eof_code: {@+scan_four_bit_int();b=(read_open[cur_val]==closed);
   } @+break;
 case if_true_code: b=true;@+break;
 case if_false_code: b=false;@+break;
-@/@t\4@>@<Cases for |conditional|@>@;
+@/@<Cases for |conditional|@>@/
 case if_case_code: @<Select the appropriate case and |return| or |goto common_ending|@>;
 }  /*there are no other cases*/
 
@@ -10795,7 +10778,6 @@ static str_number b_make_name_string(byte_file *f)
 {@+return make_name_string();
 }
 #ifdef @!INIT
-@+@t}\6\4\4{@>
 static str_number w_make_name_string(word_file *f)
 {@+return make_name_string();
 }
@@ -11549,8 +11531,8 @@ that do not do local optimization.
 
 @ Font parameters are referred to as |slant(f)|, |space(f)|, etc.
 
-@d param_end(A) @[param_base[A]].sc@]
-@d param(A) @[font_info[A+param_end@]
+@d param_end(A) param_base[A]].sc
+@d param(A) font_info[A+param_end
 @d slant param(slant_code) /*slant to the right, per unit distance upward*/
 @d space param(space_code) /*normal space between words*/
 @d space_stretch param(space_stretch_code) /*stretch between words*/
@@ -11954,11 +11936,11 @@ if (cur_val==fmem_ptr)
   }
 
 @ @<Increase the number of parameters...@>=
-{@+do {if (fmem_ptr==font_mem_size)
+{@+@/do@+{if (fmem_ptr==font_mem_size)
   overflow("font memory", font_mem_size);
 @:TeX capacity exceeded font memory}{\quad font memory@>
 font_info[fmem_ptr].sc=0;incr(fmem_ptr);incr(font_params[f]);
-} while (!(n==font_params[f]));
+}@+ while (!(n==font_params[f]));
 cur_val=fmem_ptr-1; /*this equals |param_base[f]+font_params[f]|*/
 }
 
@@ -13002,7 +12984,7 @@ entering a new level of recursion.  In effect, the values of |save_h| and
 |save_v| on \TeX's run-time stack correspond to the values of |h| and |v|
 that a \.{DVI}-reading program will push onto its coordinate stack.
 
-@p @<Declare procedures needed in |hlist_out|, |vlist_out|@>@t@>@;
+@p @t\4@>@<Declare procedures needed in |hlist_out|, |vlist_out|@>@t@>@/
 static void hlist_out(void) /*output an |hlist_node| box*/
 {@+
 scaled base_line; /*the baseline coordinate for this box*/
@@ -13044,13 +13026,13 @@ reaching a non-|char_node|. The program uses the fact that |set_char_0==0|.
 @<Output node |p| for |hlist_out|...@>=
 reswitch: if (is_char_node(p))
   {@+synch_h;synch_v;
-  do {f=font(p);c=character(p);
+  @/do@+{f=font(p);c=character(p);
   if (f!=dvi_f) @<Change font |dvi_f| to |f|@>;
   if (c >= qi(128)) dvi_out(set1);
   dvi_out(qo(c));@/
   cur_h=cur_h+char_width(f, char_info(f, c));
   p=link(p);
-  } while (!(!is_char_node(p)));
+  }@+ while (!(!is_char_node(p)));
   dvi_h=cur_h;
   }
 else@<Output the non-|char_node| |p| for |hlist_out| and move to the next
@@ -13355,7 +13337,7 @@ ready for the |ship_out| routine that gets them started in the first place.
 @p static void ship_out(pointer @!p) /*output the box |p|*/
 {@+
 execute_output(p);
-@<Flush the box from memory...@>@;
+flush_node_list(p);
 }
 
 @ @<Flush the box from memory, showing statistics if requested@>=
@@ -13489,7 +13471,7 @@ a height instead of a width; the parameter |m| is interpreted as in |hpack|.
 
 @d exactly 0 /*a box dimension is pre-specified*/
 @d additional 1 /*a box dimension is increased from the natural one*/
-@d natural 0, 0, 0, additional /*shorthand for parameters to |hpack| and |vpack|*/
+@d natural 0, 0, 0, additional, false /*shorthand for parameters to |hpack| and |vpack|*/
 
 @ The parameters to |hpack| and |vpack| correspond to \TeX's primitives
 like `\.{\\hbox} \.{to} \.{300pt}', `\.{\\hbox} \.{spread} \.{10pt}'; note
@@ -13565,7 +13547,7 @@ static pointer @!adjust_tail; /*tail of adjustment list*/
 
 @ Here now is |hpack|, which contains few if any surprises.
 
-@p static pointer hpack(pointer p, scaled w, scaled hf, scaled vf, small_number m);
+@p static pointer hpack(pointer p, scaled w, scaled hf, scaled vf, small_number m, bool keep_cs);
 
 @ @<Clear dimensions to zero@>=
 d=0;x=0;
@@ -13790,7 +13772,7 @@ point is simply moved down until the limiting depth is attained.
 
 @p
 #define vpack(...) @[vpackage(__VA_ARGS__, max_dimen)@] /*special case of unconstrained depth*/
-static pointer vpackage(pointer p, scaled h, scaled hf, scaled vf, small_number m, scaled l);
+static pointer vpackage(pointer p, scaled h, scaled hf, scaled vf, small_number m, bool keep_cs, scaled l);
 
 @ @<Examine node |p| in the vlist, taking account of its effect...@>=
 {@+if (is_char_node(p)) confusion("vpack");
@@ -13921,20 +13903,21 @@ if (last_badness > vbadness)
 @ When a box is being appended to the current vertical list, the
 baselineskip calculation is handled by the |append_to_vlist| routine.
 
-@p static void append_to_vlist(pointer @!b)
-{ @+bool height_known;
+@p static void append_to_vlist(pointer @!b)@t\2\2@>@/
+{ bool height_known;@t\1@>@/
   height_known=(type(b)==hlist_node || type(b)==vlist_node ||@|
 	   (type(b)==whatsit_node && subtype(b)==hset_node));@/
   if (prev_depth > ignore_depth && height_known)@/
-  {@+scaled d; /*deficiency of space between baselines*/
+  {@+scaled d;@t\1@> /*deficiency of space between baselines*/
     pointer @!p; /*a new glue node*/
-  d=width(baseline_skip)-prev_depth-height(b);
+  {@+d=width(baseline_skip)-prev_depth-height(b);
   if (d < line_skip_limit) p=new_param_glue(line_skip_code);
   else{@+p=new_skip_param(baseline_skip_code);
     width(temp_ptr)=d; /*|temp_ptr==glue_ptr(p)|*/
     }
   link(tail)=p;tail=p;
-} @+  else @+if (prev_depth<=unknown_depth || prev_depth>ignore_depth ) @/
+  }@+
+} @+  else @+if (prev_depth<=unknown_depth || prev_depth>ignore_depth )@t\2@>@/
   {@+pointer p;
 	p=new_baseline_node(baseline_skip, line_skip, line_skip_limit);
     link(tail)= p;tail= p;
@@ -14576,12 +14559,12 @@ be probed in increasing order of height.
 @<Look at the variants of |(z,x)|; set |f| and |c|...@>=
 if ((z!=0)||(x!=min_quarterword))
   {@+z=z+s+16;
-  do {z=z-16;g=fam_fnt(z);
+  @/do@+{z=z-16;g=fam_fnt(z);
   if (g!=null_font)
     @<Look at the list of characters starting with |x| in font |g|; set |f|
 and |c| whenever a better character is found; |goto found| as soon as a large
 enough variant is encountered@>;
-  } while (!(z < 16));
+  }@+ while (!(z < 16));
   }
 
 @ @<Look at the list of characters starting with |x|...@>=
@@ -14719,7 +14702,7 @@ if ((width(b)!=w)&&(list_ptr(b)!=null))
   b=new_glue(ss_glue);link(b)=p;
   while (link(p)!=null) p=link(p);
   link(p)=new_glue(ss_glue);
-  return hpack(b, w, 0, 0, exactly);
+  return hpack(b, w, 0, 0, exactly, false);
   }
 else{@+width(b)=w;return b;
   }
@@ -14971,8 +14954,8 @@ case rel_noad: case close_noad: case punct_noad:
   @<Convert \(a)a final |bin_noad| to an |ord_noad|@>;
   if (type(q)==right_noad) goto done_with_noad;
   } @+break;
-@/@t\4@>@<Cases for noads that can follow a |bin_noad|@>@;
-@/@t\4@>@<Cases for nodes that can appear in an mlist, after which we |goto
+@t\4@>@<Cases for noads that can follow a |bin_noad|@>@;
+@t\4@>@<Cases for nodes that can appear in an mlist, after which we |goto
 done_with_node|@>@;
 default:confusion("mlist1");
 @:this can't happen mlist1}{\quad mlist1@>
@@ -15732,7 +15715,8 @@ is not a penalty node or a |rel_noad| or absent entirely.
 @<Append any |new_hlist| entries for |q|, and any appropriate penalties@>=
 if (new_hlist(q)!=null)
   {@+link(p)=new_hlist(q);
-  do p=link(p); while (!(link(p)==null));
+  @/do@+{p=link(p);
+  }@+ while (!(link(p)==null));
   }
 if (penalties) if (link(q)!=null) if (pen < inf_penalty)
   {@+r_type=type(link(q));
@@ -15957,7 +15941,7 @@ good start. This mostly involves scanning the preamble and putting its
 information into the preamble list.
 @^preamble@>
 
-@p @<Declare the procedure called |get_preamble_token|@>@;
+@p @t\4@>@<Declare the procedure called |get_preamble_token|@>@t@>@/
 static void align_peek(void);@/
 static void normal_paragraph(void);@/
 static void init_align(void)
@@ -16145,7 +16129,8 @@ started, or finishes off the alignment.
 static void align_peek(void)
 {@+
 restart: align_state=1000000;
-do get_x_or_protected(); while (!(cur_cmd!=spacer));
+@/do@+{get_x_or_protected();
+}@+ while (!(cur_cmd!=spacer));
 if (cur_cmd==no_align)
   {@+scan_left_brace();new_save_level(no_align_group);
   if (mode==-vmode) normal_paragraph();
@@ -16164,7 +16149,7 @@ from internal vertical mode to restricted horizontal mode or vice versa.
 The |space_factor| and |prev_depth| are not used on this semantic level,
 but we clear them to zero just to be tidy.
 
-@p @<Declare the procedure called |init_span|@>@;
+@p @t\4@>@<Declare the procedure called |init_span|@>@t@>@/
 static void init_row(void)
 {@+push_nest();mode=(-hmode-vmode)-mode;
 if (mode==-hmode) space_factor=0;@+else prev_depth=0;
@@ -16257,7 +16242,8 @@ if (extra_info(cur_align)!=span_code)
   init_span(p);
   }
 align_state=1000000;
-do get_x_or_protected(); while (!(cur_cmd!=spacer));
+@/do@+{get_x_or_protected();
+}@+ while (!(cur_cmd!=spacer));
 cur_align=p;
 init_col();return false;
 }
@@ -16351,8 +16337,8 @@ link(end_span)=max_quarterword+1;info(end_span)=null;
 
 @ @<Update width entry for spanned columns@>=
 {@+q=cur_span;
-do {incr(n);q=link(link(q));
-} while (!(q==cur_align));
+@/do@+{incr(n);q=link(link(q));
+}@+ while (!(q==cur_align));
 if (n > max_quarterword) confusion("256 spans"); /*this can happen, but won't*/
 @^system dependencies@>
 @:this can't happen 256 spans}{\quad 256 spans@>
@@ -16409,9 +16395,21 @@ unsave(); /*that |align_group| was for the whole alignment*/
 if (nest[nest_ptr-1].mode_field==mmode) o=display_indent;
   else o=0;
 @<Go through the preamble list, determining the column widths and changing
-the alignrecords to dummy unset boxes@>@;
+the alignrecords to dummy unset boxes@>;
 if (x)
-{ /*Handle an alignment that depends on |hsize| or |vsize|*/
+{ @<Handle an alignment that depends on |hsize| or |vsize|@>@;
+  pop_alignment();
+}
+else
+{ @<Package the preamble list, to determine the actual tabskip glue amounts,
+  and let |p| point to this prototype box@>;
+  @<Set the glue in all the unset boxes of the current list@>;
+  flush_node_list(p);pop_alignment();
+}
+@<Insert the \(c)current list into its environment@>;
+} @/
+@t\4@>@<Declare the procedure called |align_peek|@>@;
+@ @<Handle an alignment that depends on |hsize| or |vsize|@>=
  pointer r=get_node(align_node_size);
  save_ptr=save_ptr-2;pack_begin_line=-mode_line;
 
@@ -16423,18 +16421,6 @@ if (x)
  align_v(r)= (mode!=-vmode);
  link(head)=r; tail=r;
  pack_begin_line=0;
-  pop_alignment();
-}
-else
-{ @<Package the preamble list, to determine the actual tabskip glue amounts,
-  and let |p| point to this prototype box@>;
-  @<Set the glue in all the unset boxes of the current list@>;
-  flush_node_list(p);pop_alignment();
-}
-@<Insert the \(c)current list into its environment@>;
-}
-@#
-@t\4@>@<Declare the procedure called |align_peek|@>@;
 
 @ It's time now to dismantle the preamble list and to compute the column
 widths. Let $w_{ij}$ be the maximum of the natural widths of all entries
@@ -16461,7 +16447,7 @@ value is changed to zero and so is the next tabskip.
 
 @<Go through the preamble list,...@>=
 q=link(preamble);
-do {flush_list(u_part(q));flush_list(v_part(q));
+@/do@+{flush_list(u_part(q));flush_list(v_part(q));
 p=link(link(q));
 if (width(q)==null_flag)
   @<Nullify |width(q)| and the tabskip glue following this column@>;
@@ -16475,7 +16461,7 @@ glue_stretch(q)=0;glue_shrink(q)=0;
 if (width(q)>max_dimen) x=true;
 #endif
 q=p;
-} while (!(q==null));
+}@+ while (!(q==null))
 
 @ @<Nullify |width(q)| and the tabskip glue following this column@>=
 {@+width(q)=0;r=link(q);s=glue_ptr(r);
@@ -16487,7 +16473,7 @@ if (s!=zero_glue)
 
 @ Merging of two span-node lists is a typical exercise in the manipulation of
 linearly linked data structures. The essential invariant in the following
-|do {| loop is that we want to dispense with node |r|, in |q|'s list,
+|@/do@+{| loop is that we want to dispense with node |r|, in |q|'s list,
 and |u| is its successor; all nodes of |p|'s list up to and including |s|
 have been processed, and the successor of |s| matches |r| or precedes |r|
 or follows |r|, according as |link(r)==n| or |link(r) > n| or |link(r) < n|.
@@ -16495,7 +16481,7 @@ or follows |r|, according as |link(r)==n| or |link(r) > n| or |link(r) < n|.
 @<Merge the widths...@>=
 {@+t=width(q)+width(glue_ptr(link(q)));
 r=info(q);s=end_span;info(s)=p;n=min_quarterword+1;
-do {width(r)=width(r)-t;u=info(r);
+@/do@+{width(r)=width(r)-t;u=info(r);
 while (link(r) > n)
   {@+s=info(s);n=link(info(s))+1;
   }
@@ -16506,7 +16492,7 @@ else{@+if (width(r) > width(info(s))) width(info(s))=width(r);
   free_node(r, span_node_size);
   }
 r=u;
-} while (!(r==end_span));
+}@+ while (!(r==end_span));
 }
 
 @ Now the preamble list has been converted to a list of alternating unset
@@ -16520,15 +16506,15 @@ save_ptr=save_ptr-2;pack_begin_line=-mode_line;
 if (mode==-vmode)
   {@+rule_save=overfull_rule;
   overfull_rule=0; /*prevent rule from being packaged*/
-  p=hpack(preamble, saved(1), saved_hfactor(1), saved_vfactor(1), saved(0));overfull_rule=rule_save;
+  p=hpack(preamble, saved(1), saved_hfactor(1), saved_vfactor(1), saved(0), false);overfull_rule=rule_save;
   }
 else{@+q=link(preamble);
-  do {height(q)=width(q);width(q)=0;q=link(link(q));
-  } while (!(q==null));
-  p=vpack(preamble, saved(1), saved_hfactor(1), saved_vfactor(1), saved(0));
+  @/do@+{height(q)=width(q);width(q)=0;q=link(link(q));
+  }@+ while (!(q==null));
+  p=vpack(preamble, saved(1), saved_hfactor(1), saved_vfactor(1), saved(0), false);
   q=link(preamble);
-  do {width(q)=height(q);height(q)=0;q=link(link(q));
-  } while (!(q==null));
+  @/do@+{width(q)=height(q);height(q)=0;q=link(link(q));
+  }@+ while (!(q==null));
   }
 pack_begin_line=0
 
@@ -16566,9 +16552,9 @@ else{@+type(q)=vlist_node;height(q)=height(p);
 glue_order(q)=glue_order(p);glue_sign(q)=glue_sign(p);
 glue_set(q)=glue_set(p);shift_amount(q)=o;
 r=link(list_ptr(q));s=link(list_ptr(p));
-do {@<Set the glue in node |r| and change it from an unset node@>;
+@/do@+{@<Set the glue in node |r| and change it from an unset node@>;
 r=link(link(r));s=link(link(s));
-} while (!(r==null));
+}@+ while (!(r==null));
 }
 
 @ A box made from spanned columns will be followed by tabskip glue nodes and
@@ -16900,7 +16886,7 @@ k=1 to 6 do cur_active_width[k]=cur_active_width[k]+mem[q+k].sc|};$$ and we
 want to do this without the overhead of |for| loops. The |do_all_six|
 macro makes such six-tuples convenient.
 
-@d do_all_six(A) A(1);A(2);A(3);A(4);A(5);A(6)@;
+@d do_all_six(A) A(1);A(2);A(3);A(4);A(5);A(6)
 
 @<Glob...@>=
 static scaled @!active_width0[6], *const @!active_width = @!active_width0-1;
@@ -17058,7 +17044,7 @@ loop@+{@+resume: r=link(prev_r);
   @<If node |r| is of type |delta_node|, update |cur_active_width|, set |prev_r|
 and |prev_prev_r|, then |goto resume|@>;
   @<If a line number class has ended, create new active nodes for the best
-feasible breaks in that class; then |return| if |r==last_active|, otherwise
+feasible breaks in that class; then |return| if |r=last_active|, otherwise
 compute the new |line_width|@>;
   @<Consider the demerits for a line from |r| to |cur_p|; deactivate node
 |r| if it should no longer be active; then |goto resume| if a line from
@@ -17811,10 +17797,10 @@ character node.
 
 @<Advance \(c)|cur_p| to the node following the present string...@>=
 {@+prev_p=cur_p;
-do {f=font(cur_p);
+@/do@+{f=font(cur_p);
 act_width=act_width+char_width(f, char_info(f, character(cur_p)));
 cur_p=link(cur_p);
-} while (!(!is_char_node(cur_p)));
+}@+ while (!(!is_char_node(cur_p)));
 }
 
 @ When node |cur_p| is a glue node, we look at |prev_p| to see whether or not
@@ -17839,9 +17825,9 @@ only character nodes, kern nodes, box nodes, rule nodes, and ligature nodes.
 @<Try to break after a discretionary fragment...@>=
 {@+s=pre_break(cur_p);disc_width=0;
 if (s==null) try_break(ex_hyphen_penalty, hyphenated);
-else{@+do {@<Add the width of node |s| to |disc_width|@>;
+else{@+@/do@+{@<Add the width of node |s| to |disc_width|@>;
     s=link(s);
-  } while (!(s==null));
+  }@+ while (!(s==null));
   act_width=act_width+disc_width;
   try_break(hyphen_penalty, hyphenated);
   act_width=act_width-disc_width;
@@ -17919,11 +17905,11 @@ if (link(active)!=last_active)
 
 @ @<Find an active node...@>=
 r=link(active);fewest_demerits=awful_bad;
-do {if (type(r)!=delta_node) if (total_demerits(r) < fewest_demerits)
+@/do@+{if (type(r)!=delta_node) if (total_demerits(r) < fewest_demerits)
   {@+fewest_demerits=total_demerits(r);best_bet=r;
   }
 r=link(r);
-} while (!(r==last_active));
+}@+ while (!(r==last_active));
 best_line=line_number(best_bet)
 
 @ The adjustment for a desired looseness is a slightly more complicated
@@ -17933,7 +17919,7 @@ looseness calculation, independently of the other segments.
 
 @<Find the best active node...@>=
 {@+r=link(active);actual_looseness=0;
-do {if (type(r)!=delta_node)
+@/do@+{if (type(r)!=delta_node)
   {@+line_diff=line_number(r)-best_line;
   if (((line_diff < actual_looseness)&&(looseness <= line_diff))||@|
   ((line_diff > actual_looseness)&&(looseness >= line_diff)))
@@ -17946,7 +17932,7 @@ do {if (type(r)!=delta_node)
     }
   }
 r=link(r);
-}  while (!(r==last_active));
+}@+ while (!(r==last_active));
 best_line=line_number(best_bet);
 }
 
@@ -17981,14 +17967,15 @@ quarterword @!t; /*used for replacement counts in discretionary nodes*/
 int @!pen; /*use when calculating penalties between lines*/
 halfword @!cur_line; /*the current line number being justified*/
 @<Reverse the links of the relevant passive nodes, setting |cur_p| to the
-first breakpoint@>@;
+first breakpoint@>;
 cur_line=prev_graf+1;
-do {@<Justify the line ending at breakpoint |cur_p|, and append it to the
+@<initialize the color stack@>@;
+@/do@+{@<Justify the line ending at breakpoint |cur_p|, and append it to the
 current vertical list, together with associated penalties and other insertions@>;
 incr(cur_line);cur_p=next_break(cur_p);
 if (cur_p!=null) if (!post_disc_break)
   @<Prune unwanted nodes at the beginning of the next line@>;
-} while (!(cur_p==null));
+}@+ while (!(cur_p==null));
 if ((cur_line!=best_line)||(link(temp_head)!=null))
   confusion("line breaking");
 @:this can't happen line breaking}{\quad line breaking@>
@@ -18003,8 +17990,8 @@ Node |r| is the passive node being moved from stack to stack.
 
 @<Reverse the links of the relevant passive nodes...@>=
 q=break_node(best_bet);cur_p=null;
-do {r=q;q=prev_break(q);next_break(r)=cur_p;cur_p=r;
-} while (!(q==null));
+@/do@+{r=q;q=prev_break(q);next_break(r)=cur_p;cur_p=r;
+}@+ while (!(q==null))
 
 @ Glue and penalty and kern and math nodes are deleted at the beginning of
 a line, except in the anomalous case that the node to be deleted is actually
@@ -18143,7 +18130,27 @@ else if (par_shape_ptr==null)
 else{@+cur_width=mem[par_shape_ptr+2*cur_line].sc;
   cur_indent=mem[par_shape_ptr+2*cur_line-1].sc;
   }
-adjust_tail=adjust_head;just_box=hpack(q, cur_width, 0, 0, exactly);
+{ pointer before_color_tos=color_tos;
+  pointer before_link_tos=link_tos;
+  adjust_tail=adjust_head;just_box=hpack(q, cur_width, 0, 0, exactly, true);
+  if (before_link_tos!=before_color_tos)
+  { pointer r;
+    r=new_color_node(color_ref(before_color_tos));
+    link(r) = list_ptr(just_box);
+    list_ptr(just_box)=r;
+  }
+  if (before_link_tos!=null) /* an unfinished link was in the previous line */
+  { pointer r;
+    int words;
+    r=get_node(link_node_size);
+    for (words=0;words<link_node_size; words++)
+      mem[r+words]= mem[before_link_tos+words];
+    if (label_has_name(as_label(r)))
+      add_token_ref(label_ptr(as_label(r)));
+    link(r) = list_ptr(just_box);
+    list_ptr(just_box)=r;
+  }
+}
 shift_amount(just_box)=cur_indent
 
 @ Penalties between the lines of a paragraph come from club and widow lines,
@@ -18257,8 +18264,8 @@ int @!c; /*character being considered for hyphenation*/
 second pass, and |cur_p| points to a glue node.
 
 @p
-static void hyphenate_word(void)
-{ @+pointer @!q, @!s, @!prev_s; /*miscellaneous nodes of temporary interest*/
+static void hyphenate_word(void)@t\2\2@>@/
+{ pointer @!q, @!s, @!prev_s;@t\1@> /*miscellaneous nodes of temporary interest*/
   small_number @!j; /*an index into |hc| or |hu|*/
   uint8_t @!c; /*character being considered for hyphenation*/
 
@@ -18692,7 +18699,7 @@ pointer @!hyf_node; /*the hyphen, if it exists*/
 @ When the following code is performed, |hyf[0]| and |hyf[hn]| will be zero.
 
 @<Reconstitute nodes for the hyphenated word...@>=
-do {l=j;j=reconstitute(j, hn, bchar, qi(hyf_char))+1;
+@/do@+{l=j;j=reconstitute(j, hn, bchar, qi(hyf_char))+1;
 if (hyphen_passed==0)
   {@+link(s)=link(hold_head);
   while (link(s) > null) s=link(s);
@@ -18702,8 +18709,8 @@ if (hyphen_passed==0)
   }
 if (hyphen_passed > 0)
   @<Create and append a discretionary node as an alternative to the unhyphenated
-word, and continue to develop both branches until they become equivalent@>@;
-} while (!(j > hn));
+word, and continue to develop both branches until they become equivalent@>;
+}@+ while (!(j > hn));
 link(s)=q
 
 @ In this repeat loop we will insert another discretionary if |hyf[j-1]| is
@@ -18717,7 +18724,7 @@ point. (Consider the word `difficult', where the letter `c' is in position |j|.)
     }
 
 @<Create and append a discretionary node as an alternative...@>=
-do {r=get_node(small_node_size);
+@/do@+{r=get_node(small_node_size);
 link(r)=link(hold_head);type(r)=disc_node;
 major_tail=r;r_count=0;
 while (link(major_tail) > null) advance_major_tail;
@@ -18728,7 +18735,7 @@ list and to |major_tail| until synchronization has been achieved@>;
 @<Move pointer |s| to the end of the current list, and set |replace_count(r)|
 appropriately@>;
 hyphen_passed=j-1;link(hold_head)=null;
-} while (!(!odd(hyf[j-1])));
+}@+ while (!(!odd(hyf[j-1])))
 
 @ The new hyphen might combine with the previous character via ligature
 or kern. At this point we have |l-1 <= i < j| and |i < hn|.
@@ -18760,7 +18767,7 @@ if (bchar_label[hf]!=non_address)  /*put left boundary at beginning of new line*
   {@+decr(l);c=hu[l];c_loc=l;hu[l]=256;
   }
 while (l < j)
-  {@+do {l=reconstitute(l, hn, bchar, non_char)+1;
+  {@+@/do@+{l=reconstitute(l, hn, bchar, non_char)+1;
   if (c_loc > 0)
     {@+hu[c_loc]=c;c_loc=0;
     }
@@ -18770,7 +18777,7 @@ while (l < j)
     minor_tail=link(hold_head);
     while (link(minor_tail) > null) minor_tail=link(minor_tail);
     }
-  } while (!(l >= j));
+  }@+ while (!(l >= j));
   while (l > j)
     @<Append characters of |hu[j..]| to |major_tail|, advancing~|j|@>;
   }
@@ -18888,10 +18895,10 @@ for (j=0; j<=r_hyf-1; j++) hyf[hn-j]=0
 
 @ @<Store \(m)maximum values in the |hyf| table@>=
 {@+v=trie_op(z);
-do {v=v+op_start[cur_lang];i=l-hyf_distance[v];
+@/do@+{v=v+op_start[cur_lang];i=l-hyf_distance[v];
 if (hyf_num[v] > hyf[i]) hyf[i]=hyf_num[v];
 v=hyf_next[v];
-} while (!(v==min_quarterword));
+}@+ while (!(v==min_quarterword));
 }
 
 @ The exception table that is built by \TeX's \.{\\hyphenation} primitive is
@@ -18956,10 +18963,10 @@ k=hyph_word[h];if (k==0) goto not_found;
 if (length(k) < hn) goto not_found;
 if (length(k)==hn)
   {@+j=1;u=str_start[k];
-  do {if (so(str_pool[u]) < hc[j]) goto not_found;
+  @/do@+{if (so(str_pool[u]) < hc[j]) goto not_found;
   if (so(str_pool[u]) > hc[j]) goto done;
   incr(j);incr(u);
-  } while (!(j > hn));
+  }@+ while (!(j > hn));
   @<Insert hyphens as specified in |hyph_list[h]|@>;
   decr(hn);goto found;
   }
@@ -19085,10 +19092,10 @@ k=hyph_word[h];
 if (length(k) < length(s)) goto found;
 if (length(k) > length(s)) goto not_found;
 u=str_start[k];v=str_start[s];
-do {if (str_pool[u] < str_pool[v]) goto found;
+@/do@+{if (str_pool[u] < str_pool[v]) goto found;
 if (str_pool[u] > str_pool[v]) goto not_found;
 incr(u);incr(v);
-} while (!(u==str_start[k+1]));
+}@+ while (!(u==str_start[k+1]));
 found: q=hyph_list[h];hyph_list[h]=p;p=q;@/
 t=hyph_word[h];hyph_word[h]=s;s=t;
 not_found:
@@ -19376,7 +19383,7 @@ loop@+{@+h=z-c;@/
 otherwise |goto not_found|@>;
   not_found: z=trie_link(z); /*move to the next hole*/
   }
-found: @<Pack the family into |trie| relative to |h|@>@;
+found: @<Pack the family into |trie| relative to |h|@>;
 }
 
 @ By making sure that |trie_max| is at least |h+256|, we can be sure that
@@ -19387,9 +19394,9 @@ never be occupied in |trie|, and we will have |trie_max >= trie_link(z)|.
 if (trie_max < h+256)
   {@+if (trie_size <= h+256) overflow("pattern memory", trie_size);
 @:TeX capacity exceeded pattern memory}{\quad pattern memory@>
-  do {incr(trie_max);trie_taken[trie_max]=false;
+  @/do@+{incr(trie_max);trie_taken[trie_max]=false;
   trie_link(trie_max)=trie_max+1;trie_back(trie_max)=trie_max-1;
-  } while (!(trie_max==h+256));
+  }@+ while (!(trie_max==h+256));
   }
 
 @ @<If all characters of the family fit relative to |h|...@>=
@@ -19402,15 +19409,15 @@ goto found
 
 @ @<Pack the family into |trie| relative to |h|@>=
 trie_taken[h]=true;trie_ref[p]=h;q=p;
-do {z=h+so(trie_c[q]);l=trie_back(z);r=trie_link(z);
+@/do@+{z=h+so(trie_c[q]);l=trie_back(z);r=trie_link(z);
 trie_back(r)=l;trie_link(l)=r;trie_link(z)=0;
 if (l < 256)
   {@+if (z < 256) ll=z;@+else ll=256;
-  do {trie_min[l]=r;incr(l);
-  } while (!(l==ll));
+  @/do@+{trie_min[l]=r;incr(l);
+  }@+ while (!(l==ll));
   }
 q=trie_r[q];
-} while (!(q==0));
+}@+ while (!(q==0))
 
 @ To pack the entire linked trie, we use the following recursive procedure.
 @^recursion@>
@@ -19418,12 +19425,12 @@ q=trie_r[q];
 @<Declare procedures for preprocessing hyph...@>=
 static void trie_pack(trie_pointer @!p) /*pack subtries of a family*/
 {@+trie_pointer q; /*a local variable that need not be saved on recursive calls*/
-do {q=trie_l[p];
+@/do@+{q=trie_l[p];
 if ((q > 0)&&(trie_ref[q]==0))
   {@+first_fit(q);trie_pack(q);
   }
 p=trie_r[p];
-} while (!(p==0));
+}@+ while (!(p==0));
 }
 
 @ When the whole trie has been allocated into the sequential table, we
@@ -19441,8 +19448,8 @@ if (trie_max==0)  /*no patterns were given*/
 else{@+if (hyph_root > 0) trie_fix(hyph_root);
   if (trie_root > 0) trie_fix(trie_root); /*this fixes the non-holes in |trie|*/
   r=0; /*now we will zero out all the holes*/
-  do {s=trie_link(r);trie[r]=h;r=s;
-  } while (!(r > trie_max));
+  @/do@+{s=trie_link(r);trie[r]=h;r=s;
+  }@+ while (!(r > trie_max));
   }
 trie_char(0)=qi('?'); /*make |trie_char(c)!=c| for all |c|*/
 
@@ -19458,11 +19465,11 @@ static void trie_fix(trie_pointer @!p) /*moves |p| and its siblings into |trie|*
 ASCII_code @!c; /*another one that need not be saved*/
 trie_pointer @!z; /*|trie| reference; this local variable must be saved*/
 z=trie_ref[p];
-do {q=trie_l[p];c=so(trie_c[p]);
+@/do@+{q=trie_l[p];c=so(trie_c[p]);
 trie_link(z+c)=trie_ref[q];trie_char(z+c)=qi(c);trie_op(z+c)=trie_o[p];
 if (q > 0) trie_fix(q);
 p=trie_r[p];
-} while (!(p==0));
+}@+ while (!(p==0));
 }
 
 @ Now let's go back to the easier problem, of building the linked
@@ -19818,9 +19825,17 @@ q=vert_break(list_ptr(v), h, split_max_depth);
 to |null| at the break@>;
 q=prune_page_top(q, saving_vdiscards > 0);
 p=list_ptr(v);list_ptr(v)=null;flush_node_list(v);
-if (q!=null) q=vpack(q, natural);
+p=vpackage(p, h, 0, 0, exactly, false, split_max_depth);
+if (q!=null)
+{ if (color_tos!=null)
+  { pointer r = new_color_node(color_ref(color_tos));
+    color_tos=color_link(color_tos);
+    link(r)=q; q=r;
+  }
+  q=vpack(q, natural);
+}
 change_box(q); /*the |eq_level| of the box stays the same*/
-return vpackage(p, h, 0, 0, exactly, split_max_depth);
+return p;
 }
 
 @ @<Dispense with trivial cases of void or bad boxes@>=
@@ -20061,9 +20076,9 @@ if (page_head!=page_tail)
       print_scaled(t);
       if (type(r)==split_up)
         {@+q=page_head;t=0;
-        do {q=link(q);
+        @/do@+{q=link(q);
         if ((type(q)==ins_node)&&(subtype(q)==subtype(r))) incr(t);
-        } while (!(q==broken_ins(r)));
+        }@+ while (!(q==broken_ins(r)));
         print(", #");print_int(t);print(" might split");
         }
       r=link(r);
@@ -20573,7 +20588,7 @@ if (p!=null)
   }
 save_vbadness=vbadness;vbadness=inf_bad;
 save_vfuzz=vfuzz;vfuzz=max_dimen; /*inhibit error messages*/
-box(255)=vpackage(link(page_head), best_size, 0, 0, exactly, page_max_depth);
+box(255)=vpackage(link(page_head), best_size, 0, 0, exactly, false, page_max_depth);
 vbadness=save_vbadness;vfuzz=save_vfuzz;
 if (last_glue!=max_halfword) delete_glue_ref(last_glue);
 @<Start a new current page@>; /*this sets |last_glue=max_halfword|*/
@@ -20723,7 +20738,8 @@ pop_nest();build_page();
 @.Unbalanced output routine@>
 help2("Your sneaky output routine has problematic {'s and/or }'s.",@/
 "I can't handle that very well; good luck.");error();
-do get_token(); while (!(loc==null));
+@/do@+{get_token();
+}@+ while (!(loc==null));
 }  /*loops forever if reading from a file, since |null==min_halfword <= 0|*/
 
 @ @<Ensure that box 255 is empty after output@>=
@@ -20807,7 +20823,7 @@ case hmode+no_boundary: {@+get_x_token();
 case hmode+spacer: if (space_factor==1000) goto append_normal_space;
   else app_space();@+break;
 case hmode+ex_space: case mmode+ex_space: goto append_normal_space;
-@/@t\4@>@<Cases of |main_control| that are not part of the inner loop@>@;
+@t\4@>@<Cases of |main_control| that are not part of the inner loop@>@;
 }  /*of the big |case| statement*/
 goto big_switch;
 main_loop: @<Append character |cur_chr| and the following characters (if~any)
@@ -21120,7 +21136,7 @@ if ((space_factor >= 2000)&&(xspace_skip!=zero_glue))
 else{@+if (space_skip!=zero_glue) main_p=space_skip;
   else@<Find the glue specification...@>;
   main_p=new_spec(main_p);
-  @<Modify the glue specification in |main_p| according to the space factor@>@;
+  @<Modify the glue specification in |main_p| according to the space factor@>;
   q=new_glue(main_p);glue_ref_count(main_p)=null;
   }
 link(tail)=q;tail=q;
@@ -21129,7 +21145,7 @@ link(tail)=q;tail=q;
 @ @<Modify the glue specification in |main_p| according to the space factor@>=
 if (space_factor >= 2000) width(main_p)=width(main_p)+extra_space(cur_font);
 stretch(main_p)=xn_over_d(stretch(main_p), space_factor, 1000);
-shrink(main_p)=xn_over_d(shrink(main_p), 1000, space_factor);
+shrink(main_p)=xn_over_d(shrink(main_p), 1000, space_factor)
 
 @ Whew---that covers the main loop. We can now proceed at a leisurely
 pace through the other combinations of possibilities.
@@ -21139,12 +21155,12 @@ pace through the other combinations of possibilities.
 
 @<Cases of |main_control| that are not part of the inner loop@>=
 any_mode(relax): case vmode+spacer: case mmode+spacer:
-  case mmode+no_boundary: do_nothing;
+  case mmode+no_boundary: do_nothing;@+break;
 any_mode(ignore_spaces): {@+@<Get the next non-blank non-call...@>;
   goto reswitch;
   }
 case vmode+stop: if (its_all_over()) return;@+break; /*this is the only way out*/
-@<Forbidden cases detected in |main_control|@>@+@, any_mode(mac_param):
+@t\4@>@<Forbidden cases detected in |main_control|@>@+@, any_mode(mac_param):
   report_illegal_case();@+break;
 @<Math-only cases in non-math modes, or vice versa@>: insert_dollar_sign();@+break;
 @t\4@>@<Cases of |main_control| that build boxes and lists@>@;
@@ -21497,7 +21513,7 @@ case bottom_level: {@+print_err("Too many }'s");
   } @+break;
 case semi_simple_group: case math_shift_group:
   case math_left_group: extra_right_brace();@+break;
-@/@t\4@>@<Cases of |handle_right_brace| where a |right_brace| triggers a delayed
+@t\4@>@<Cases of |handle_right_brace| where a |right_brace| triggers a delayed
 action@>@;
 default:confusion("rightbrace");
 @:this can't happen rightbrace}{\quad rightbrace@>
@@ -21693,7 +21709,7 @@ current vertical list.
   }
 else{@+cur_val=box_context-global_box_flag;a=4;
   }
-if (cur_val < 256) @[g_define(box_base+cur_val, box_ref, cur_box)@];
+if (cur_val < 256) define(box_base+cur_val, box_ref, cur_box);
 else sa_def_box;
 }
 
@@ -21761,13 +21777,13 @@ else{@+if (!is_char_node(tail))
 
 @ @<Remove the last box...@>=
 {@+q=head;
-do {p=q;
+@/do@+{p=q;
 if (!is_char_node(q)) if (type(q)==disc_node)
   {@+for (m=1; m<=replace_count(q); m++) p=link(p);
   if (p==tail) goto done;
   }
 q=link(p);
-} while (!(q==tail));
+}@+ while (!(q==tail));
 cur_box=tail;shift_amount(cur_box)=0;
 tail=p;link(p)=null;
 done: ;}
@@ -21848,8 +21864,8 @@ static void package(small_number @!c)
 pointer @!p; /*first node in a box*/
 scaled @!d; /*max depth*/
 d=box_max_depth;unsave();save_ptr=save_ptr-3;
-if (mode==-hmode) cur_box=hpack(link(head), saved(2), saved_hfactor(2), saved_vfactor(2),  saved(1));
-else{@+cur_box=vpackage(link(head), saved(2), saved_hfactor(2), saved_vfactor(2), saved(1), d);
+if (mode==-hmode) cur_box=hpack(link(head), saved(2), saved_hfactor(2), saved_vfactor(2),  saved(1), false);
+else{@+cur_box=vpackage(link(head), saved(2), saved_hfactor(2), saved_vfactor(2), saved(1), false, d);
   if (c==vtop_code) @<Readjust the height and depth of |cur_box|, for \.{\\vtop}@>;
   }
 pop_nest();box_end(saved(0));
@@ -22078,13 +22094,13 @@ if ((mode==vmode)&&(tail==head))
 non-glue@>@;
 else{@+if (!is_char_node(tail)) if (type(tail)==cur_chr)
     {@+q=head;
-    do {p=q;
+    @/do@+{p=q;
     if (!is_char_node(q)) if (type(q)==disc_node)
       {@+for (m=1; m<=replace_count(q); m++) p=link(p);
       if (p==tail) return;
       }
     q=link(p);
-    } while (!(q==tail));
+    }@+ while (!(q==tail));
     link(p)=null;flush_node_list(tail);tail=p;
     }
   }
@@ -22125,8 +22141,8 @@ case remove_item: if (chr_code==glue_node) print_esc("unskip");
   else print_esc("unpenalty");@+break;
 case un_hbox: if (chr_code==copy_code) print_esc("unhcopy");
   else print_esc("unhbox");@+break;
-case un_vbox: if (chr_code==copy_code) print_esc("unvcopy");
-  else @<Cases of |un_vbox| for |print_cmd_chr|@>@;
+case un_vbox: if (chr_code==copy_code) print_esc("unvcopy")
+  @<Cases of |un_vbox| for |print_cmd_chr|@>;@/
   else print_esc("unvbox");@+break;
 
 @ The |un_hbox| and |un_vbox| commands unwrap one of the 256 current boxes.
@@ -22925,7 +22941,7 @@ case mmode+vcenter: {@+scan_spec(vcenter_group, false);normal_paragraph();
 
 @ @<Cases of |handle...@>=
 case vcenter_group: {@+end_graf();unsave();save_ptr=save_ptr-2;
-  p=vpack(link(head), saved(1), saved_hfactor(1), saved_vfactor(1), saved(0));pop_nest();
+  p=vpack(link(head), saved(1), saved_hfactor(1), saved_vfactor(1), saved(0), false);pop_nest();
   tail_append(new_noad());type(tail)=vcenter_noad;
   math_type(nucleus(tail))=sub_box;info(nucleus(tail))=p;
   } @+break;
@@ -23167,8 +23183,8 @@ primitive("right", left_right, right_noad);
 text(frozen_right)=text(cur_val);eqtb[frozen_right]=eqtb[cur_val];
 
 @ @<Cases of |print_cmd_chr|...@>=
-case left_right: if (chr_code==left_noad) print_esc("left");
-else @<Cases of |left_right| for |print_cmd_chr|@>@;
+case left_right: if (chr_code==left_noad) print_esc("left")
+@/@<Cases of |left_right| for |print_cmd_chr|@>;@/
 else print_esc("right");@+break;
 
 @ @<Cases of |main_control| that build...@>=
@@ -23365,12 +23381,12 @@ by causing its width to be zero.
    (total_shrink[fil]!=0)||(total_shrink[fill]!=0)||
    (total_shrink[filll]!=0)))
   {@+list_ptr(b)=null;flush_node_list(b);
-  b=hpack(p, z-q, 0, 0, exactly);
+  b=hpack(p, z-q, 0, 0, exactly, false);
   }
 else{@+e=0;
   if (w > z)
     {@+list_ptr(b)=null;flush_node_list(b);
-    b=hpack(p, z, 0, 0, exactly);
+    b=hpack(p, z, 0, 0, exactly, false);
     }
   }
 w=width(b);
@@ -23505,8 +23521,8 @@ primitive("xdef", def, 3);
 
 @ @<Cases of |print_cmd_chr|...@>=
 case prefix: if (chr_code==1) print_esc("long");
-  else if (chr_code==2) print_esc("outer");
-  else @<Cases of |prefix| for |print_cmd_chr|@>@;
+  else if (chr_code==2) print_esc("outer")
+  @/@<Cases of |prefix| for |print_cmd_chr|@>;@/
   else print_esc("global");@+break;
 case def: if (chr_code==0) print_esc("def");
   else if (chr_code==1) print_esc("gdef");
@@ -23616,7 +23632,7 @@ if ((cur_cmd!=def)&&((a%4!=0)||(j!=0)))
 since the following routines test for the \.{\\global} prefix as follows.
 
 @d global (a >= 4)
-@d g_define(A, B, C) if (global) geq_define(A, B, C);@+else eq_define(A, B, C)
+@d define(A, B, C) if (global) geq_define(A, B, C);@+else eq_define(A, B, C)
 @d word_define(A, B) if (global) geq_word_define(A, B);@+else eq_word_define(A, B)
 
 @<Adjust \(f)for the setting of \.{\\globaldefs}@>=
@@ -23634,7 +23650,8 @@ control sequence for a token that is not redefinable.
 @<Declare subprocedures for |prefixed_command|@>=
 static void get_r_token(void)
 {@+
-restart: do get_token(); while (!(cur_tok!=space_token));
+restart: @/do@+{get_token();
+}@+ while (!(cur_tok!=space_token));
 if ((cur_cs==0)||(cur_cs > frozen_control_sequence))
   {@+print_err("Missing control sequence inserted");
 @.Missing control...@>
@@ -23657,7 +23674,7 @@ text(frozen_protection)=s_no("inaccessible");
 (Unfortunately, they aren't all as simple as this.)
 
 @<Assignments@>=
-case set_font: g_define(cur_font_loc, data, cur_chr);@+break;
+case set_font: define(cur_font_loc, data, cur_chr);@+break;
 
 @ When a |def| command has been scanned,
 |cur_chr| is odd if the definition is supposed to be global, and
@@ -23671,7 +23688,7 @@ case def: {@+if (odd(cur_chr)&&!global&&(global_defs >= 0)) a=a+4;
     {@+q=get_avail();info(q)=j;link(q)=link(def_ref);
     link(def_ref)=q;
     }
-  g_define(p, call+(a%4), def_ref);
+  define(p, call+(a%4), def_ref);
   } @+break;
 
 @ Both \.{\\let} and \.{\\futurelet} share the command code |let|.
@@ -23689,7 +23706,8 @@ case let: if (chr_code!=normal) print_esc("futurelet");@+else print_esc("let");@
 case let: {@+n=cur_chr;
   get_r_token();p=cur_cs;
   if (n==normal)
-    {@+do get_token(); while (!(cur_cmd!=spacer));
+    {@+@/do@+{get_token();
+    }@+ while (!(cur_cmd!=spacer));
     if (cur_tok==other_token+'=')
       {@+get_token();
       if (cur_cmd==spacer) get_token();
@@ -23702,7 +23720,7 @@ case let: {@+n=cur_chr;
   else if ((cur_cmd==internal_register)||(cur_cmd==toks_register))
     if ((cur_chr < mem_bot)||(cur_chr > lo_mem_stat_max))
       add_sa_ref(cur_chr);
-  g_define(p, cur_cmd, cur_chr);
+  define(p, cur_cmd, cur_chr);
   } @+break;
 
 @ A \.{\\chardef} creates a control sequence whose |cmd| is |char_given|;
@@ -23757,12 +23775,12 @@ producing an ``undefined control sequence'' error or expanding the
 previous meaning.  This allows, for instance, `\.{\\chardef\\foo=123\\foo}'.
 
 @<Assignments@>=
-case shorthand_def: {@+n=cur_chr;get_r_token();p=cur_cs;g_define(p, relax, 256);
+case shorthand_def: {@+n=cur_chr;get_r_token();p=cur_cs;define(p, relax, 256);
   scan_optional_equals();
   switch (n) {
-  case char_def_code: {@+scan_char_num();g_define(p, char_given, cur_val);
+  case char_def_code: {@+scan_char_num();define(p, char_given, cur_val);
     } @+break;
-  case math_char_def_code: {@+scan_fifteen_bit_int();g_define(p, math_given, cur_val);
+  case math_char_def_code: {@+scan_fifteen_bit_int();define(p, math_given, cur_val);
     } @+break;
   default:{@+scan_register_num();
     if (cur_val > 255)
@@ -23770,15 +23788,15 @@ case shorthand_def: {@+n=cur_chr;get_r_token();p=cur_cs;g_define(p, relax, 256);
       if (j > mu_val) j=tok_val; /*|int_val dotdot mu_val| or |tok_val|*/
       find_sa_element(j, cur_val, true);add_sa_ref(cur_ptr);
       if (j==tok_val) j=toks_register;@+else j=internal_register;
-      g_define(p, j, cur_ptr);
+      define(p, j, cur_ptr);
       }
     else
     switch (n) {
-    case count_def_code: g_define(p, assign_int, count_base+cur_val);@+break;
-    case dimen_def_code: g_define(p, assign_dimen, scaled_base+cur_val);@+break;
-    case skip_def_code: g_define(p, assign_glue, skip_base+cur_val);@+break;
-    case mu_skip_def_code: g_define(p, assign_mu_glue, mu_skip_base+cur_val);@+break;
-    case toks_def_code: g_define(p, assign_toks, toks_base+cur_val);
+    case count_def_code: define(p, assign_int, count_base+cur_val);@+break;
+    case dimen_def_code: define(p, assign_dimen, scaled_base+cur_val);@+break;
+    case skip_def_code: define(p, assign_glue, skip_base+cur_val);@+break;
+    case mu_skip_def_code: define(p, assign_mu_glue, mu_skip_base+cur_val);@+break;
+    case toks_def_code: define(p, assign_toks, toks_base+cur_val);
     }  /*there are no other cases*/
     }
   }
@@ -23794,7 +23812,7 @@ case read_to_cs: {@+j=cur_chr;scan_int();n=cur_val;
     "I'm going to look for the \\cs now.");error();
     }
   get_r_token();
-  p=cur_cs;read_toks(n, p, j);g_define(p, call, cur_val);
+  p=cur_cs;read_toks(n, p, j);define(p, call, cur_val);
   } @+break;
 
 @ The token-list parameters, \.{\\output} and \.{\\everypar}, etc., receive
@@ -23864,7 +23882,7 @@ case assign_dimen: {@+p=cur_chr;scan_optional_equals();
 case assign_glue: case assign_mu_glue: {@+p=cur_chr;n=cur_cmd;scan_optional_equals();
   if (n==assign_mu_glue) scan_glue(mu_val);@+else scan_glue(glue_val);
   trap_zero_glue();
-  g_define(p, glue_ref, cur_val);
+  define(p, glue_ref, cur_val);
   } @+break;
 
 @ When a glue register or parameter becomes zero, it will always point to
@@ -23927,8 +23945,8 @@ case def_code: {@+@<Let |n| be the largest legal code value, based on |cur_chr|@
     help1("I'm going to use 0 instead of that illegal code value.");@/
     error();cur_val=0;
     }
-  if (p < math_code_base) g_define(p, data, cur_val);
-  else if (p < del_code_base) g_define(p, data, hi(cur_val));
+  if (p < math_code_base) define(p, data, cur_val);
+  else if (p < del_code_base) define(p, data, hi(cur_val));
   else word_define(p, cur_val);
   } @+break;
 
@@ -23941,7 +23959,7 @@ else n=255
 
 @ @<Assignments@>=
 case def_family: {@+p=cur_chr;scan_four_bit_int();p=p+cur_val;
-  scan_optional_equals();scan_font_ident();g_define(p, data, cur_val);
+  scan_optional_equals();scan_font_ident();define(p, data, cur_val);
   } @+break;
 
 @ Next we consider changes to \TeX's numeric registers.
@@ -24149,8 +24167,8 @@ static void alter_integer(void)
 {@+small_number c;
    /*0 for \.{\\deadcycles}, 1 for \.{\\insertpenalties}, etc.*/
 c=cur_chr;scan_optional_equals();scan_int();
-if (c==0) dead_cycles=cur_val;
-else @<Cases for |alter_integer|@>@;
+if (c==0) dead_cycles=cur_val
+@/@<Cases for |alter_integer|@>@;@/
 else insert_penalties=cur_val;
 }
 
@@ -24188,7 +24206,7 @@ case set_shape: {@+q=cur_chr;scan_optional_equals();scan_int();n=cur_val;
       }
     cur_hfactor=fh; cur_vfactor=fv;
     }
-  g_define(q, shape_ref, p);
+  define(q, shape_ref, p);
   } @+break;
 
 @ Here's something that isn't quite so obvious. It guarantees that
@@ -24219,7 +24237,7 @@ new_patterns();goto done;@;
     print_err("Patterns can be loaded only by INITEX");
 @.Patterns can be...@>
     help0;error();
-    do get_token(); while (!(cur_cmd==right_brace)); /*flush the patterns*/
+    @/do@+{get_token();}@+ while (!(cur_cmd==right_brace)); /*flush the patterns*/
     return;
     }
   else{@+new_hyph_exceptions();goto done;
@@ -24273,12 +24291,12 @@ else{@+old_setting=selector;selector=new_string;
 @.FONTx@>
   str_room(1);t=make_string();
   }
-g_define(u, set_font, null_font);scan_optional_equals();scan_file_name();
+define(u, set_font, null_font);scan_optional_equals();scan_file_name();
 @<Scan the font size specification@>;
 @<If this font has already been loaded, set |f| to the internal font number
 and |goto common_ending|@>;
 f=read_font_info(u, cur_name, cur_area, s);
-common_ending: g_define(u, set_font, f);eqtb[font_id_base+f]=eqtb[u];font_id_text(f)=t;
+common_ending: define(u, set_font, f);eqtb[font_id_base+f]=eqtb[u];font_id_text(f)=t;
 }
 
 @ @<Scan the font size specification@>=
@@ -24663,7 +24681,7 @@ so that the inverse relation between them is clear.
 The global variable |format_ident| is a string that is printed right
 after the |banner| line when \TeX\ is ready to start. For \.{INITEX} this
 string says simply `\.{ (INITEX)}'; for other versions of \TeX\ it says,
-for example, `\.{(preloaded format=plain 1982.11.19)}', showing the year,
+for example, `\.{ (preloaded format=plain 1982.11.19)}', showing the year,
 month, and day that the format file was created. We have |format_ident==0|
 before \TeX's tables are loaded.
 
@@ -24853,10 +24871,10 @@ sort_avail();var_used=0;
 dump_int(lo_mem_max);dump_int(rover);
 if (eTeX_ex) for (k=int_val; k<=tok_val; k++) dump_int(sa_root[k]);
 p=mem_bot;q=rover;x=0;
-do {for (k=p; k<=q+1; k++) dump_wd(mem[k]);
+@/do@+{for (k=p; k<=q+1; k++) dump_wd(mem[k]);
 x=x+q+2-p;var_used=var_used+q-p;
 p=q+node_size(q);q=rlink(q);
-} while (!(q==rover));
+}@+ while (!(q==rover));
 var_used=var_used+lo_mem_max-p;dyn_used=mem_end+1-hi_mem_min;@/
 for (k=p; k<=lo_mem_max; k++) dump_wd(mem[k]);
 x=x+lo_mem_max+1-p;
@@ -24878,11 +24896,11 @@ undump(lo_mem_stat_max+1, lo_mem_max, rover);
 if (eTeX_ex) for (k=int_val; k<=tok_val; k++)
   undump(null, lo_mem_max, sa_root[k]);
 p=mem_bot;q=rover;
-do {for (k=p; k<=q+1; k++) undump_wd(mem[k]);
+@/do@+{for (k=p; k<=q+1; k++) undump_wd(mem[k]);
 p=q+node_size(q);
 if ((p > lo_mem_max)||((q >= rlink(q))&&(rlink(q)!=rover))) goto bad_fmt;
 q=rlink(q);
-} while (!(q==rover));
+}@+ while (!(q==rover));
 for (k=p; k<=lo_mem_max; k++) undump_wd(mem[k]);
 if (mem_min < mem_bot-2)  /*make more low memory available*/
   {@+p=llink(rover);q=mem_min+1;
@@ -24897,14 +24915,14 @@ for (k=hi_mem_min; k<=mem_end; k++) undump_wd(mem[k]);
 undump_int(var_used);undump_int(dyn_used)
 
 @ @<Dump the table of equivalents@>=
-@<Dump regions 1 to 4 of |eqtb|@>@;
-@<Dump regions 5 and 6 of |eqtb|@>@;
+@<Dump regions 1 to 4 of |eqtb|@>;
+@<Dump regions 5 and 6 of |eqtb|@>;
 dump_int(par_loc);dump_int(write_loc);@/
 dump_int(input_loc);@/
 @<Dump the hash table@>@;
 
 @ @<Undump the table of equivalents@>=
-@<Undump regions 1 to 6 of |eqtb|@>@;
+@<Undump regions 1 to 6 of |eqtb|@>;
 undump(hash_base, frozen_control_sequence, par_loc);
 par_token=cs_token_flag+par_loc;@/
 undump(hash_base, frozen_control_sequence, write_loc);@/
@@ -24919,7 +24937,7 @@ copies of $x_n$, namely $(x_1,\ldots,x_n,x_n,\ldots,x_n)$.
 
 @<Dump regions 1 to 4 of |eqtb|@>=
 k=active_base;
-do {j=k;
+@/do@+{j=k;
 while (j < int_base-1)
   {@+if ((equiv(j)==equiv(j+1))&&(eq_type(j)==eq_type(j+1))&&@|
     (eq_level(j)==eq_level(j+1))) goto found1;
@@ -24937,10 +24955,10 @@ while (k < l)
   {@+dump_wd(eqtb[k]);incr(k);
   }
 k=j+1;dump_int(k-l);
-} while (!(k==int_base));
+}@+ while (!(k==int_base))
 
 @ @<Dump regions 5 and 6 of |eqtb|@>=
-do {j=k;
+@/do@+{j=k;
 while (j < eqtb_size)
   {@+if (eqtb[j].i==eqtb[j+1].i) goto found2;
   incr(j);
@@ -24956,11 +24974,11 @@ while (k < l)
   {@+dump_wd(eqtb[k]);incr(k);
   }
 k=j+1;dump_int(k-l);
-} while (!(k > eqtb_size));
+}@+ while (!(k > eqtb_size))
 
 @ @<Undump regions 1 to 6 of |eqtb|@>=
 k=active_base;
-do {undump_int(x);
+@/do@+{undump_int(x);
 if ((x < 1)||(k+x > eqtb_size+1)) goto bad_fmt;
 for (j=k; j<=k+x-1; j++) undump_wd(eqtb[j]);
 k=k+x;
@@ -24968,7 +24986,7 @@ undump_int(x);
 if ((x < 0)||(k+x > eqtb_size+1)) goto bad_fmt;
 for (j=k; j<=k+x-1; j++) eqtb[j]=eqtb[k-1];
 k=k+x;
-} while (!(k > eqtb_size));
+}@+ while (!(k > eqtb_size))
 
 @ A different scheme is used to compress the hash table, since its lower
 region is usually sparse. When |text(p)!=0| for |p <= hash_used|, we output
@@ -24986,8 +25004,8 @@ print_ln();print_int(cs_count);print(" multiletter control sequences")
 
 @ @<Undump the hash table@>=
 undump(hash_base, frozen_control_sequence, hash_used);p=hash_base-1;
-do {undump(p+1, hash_used, p);undump_hh(hash[p]);
-} while (!(p==hash_used));
+@/do@+{undump(p+1, hash_used, p);undump_hh(hash[p]);
+}@+ while (!(p==hash_used));
 for (p=hash_used+1; p<=undefined_control_sequence-1; p++) undump_hh(hash[p]);
 undump_int(cs_count)
 
@@ -25673,21 +25691,31 @@ to hold the string numbers for name, area, and extension.
 @d ignore_info(A)    type(A+1)
 @d ignore_list(A)    link(A+1)
 
-@d label_node hitex_ext+17 /* represents a link to a another location */
+@d color_node hitex_ext+17 /* represent a color node */
+@d end_color_node hitex_ext+18 /* represent an end color node */
+@d default_color_node hitex_ext+19 /* set default colors*/
+@d link_color_node hitex_ext+20 /* set link colors */
+@d default_link_color_node hitex_ext+21 /* set default link colors */
+@d no_color_node  hitex_ext+22 /* a deleted end color node */
+@d color_node_size small_node_size
+@d color_ref(A)  type(A+1) /* reference to the color set */
+@d color_link(A)     link(A+1) /* pointer down the color stack */
+
+@d label_node hitex_ext+23 /* represents a link to a another location */
 @d label_node_size 2
 @d label_has_name(A)  type(A+1) /* 1 for a name , 0 for a number */
 @d label_where(A)  subtype(A+1) /* 1 for top, 2 for bot, 3 for mid */
-@d label_ptr(A) link(A+1) /* for a name the token list or the number */
-@d label_ref(A) link(A+1) /*alternatively the label number */
+@d label_ptr(A) link(A+1) /* hitex: a name (token list) or a number */
 
-@d start_link_node hitex_ext+18 /* represents a link to a another location */
-@d end_link_node hitex_ext+19 /* represents a link to a another location */
-@d link_node_size 2 /* second word like a |label_node| */
+@d start_link_node hitex_ext+24 /* represents a link to another location */
+@d end_link_node hitex_ext+25 /* represents a link to another location */
+@d link_node_size 3 /* second word like a |color_node| */
+@d as_label(A) ((A)+1) /* third word like a |label_node| */
 
-@d outline_node hitex_ext+20 /* represents an outline item */
-@d outline_node_size 4 /* second word like a |label_node| */
+@d outline_node hitex_ext+26 /* represents an outline item */
+@d outline_node_size 3 /* second word like a |label_node| */
 @d outline_ptr(A)   link(A+2) /* text to be displayed */
-@d outline_depth(A) mem[A+3].i /* depth of sub items */
+@d outline_depth(A) info(A+2) /* depth of sub items */
 
 
 @ The sixteen possible \.{\\write} streams are represented by the |write_file|
@@ -25724,46 +25752,8 @@ primitive("special", extension, special_node);@/
 @!@:special\_}{\.{\\special} primitive@>
 primitive("immediate", extension, immediate_code);@/
 @!@:immediate\_}{\.{\\immediate} primitive@>
-
 primitive("setlanguage", extension, set_language_code);@/
 @!@:set\_language\_}{\.{\\setlanguage} primitive@>
-
-primitive("HINTversion", last_item, HINT_version_code);
-@!@:HINT\_version\_}{\.{\\HINTversion} primitive@>
-
-primitive("HINTminorversion", last_item, HINT_minor_version_code);
-@!@:HINT\_minor\_version\_}{\.{\\HINTminorversion} primitive@>
-
-primitive("HINTdest", extension, label_node);@/
-@!@:HINTdest\_}{\.{\\HINTdest} primitive@>
-
-primitive("HINTstartlink", extension, start_link_node);@/
-@!@:startlink\_}{\.{\\HINTstartlink} primitive@>
-
-primitive("HINTendlink", extension, end_link_node);@/
-@!@:HINTendlink\_}{\.{\\HINTendlink} primitive@>
-
-primitive("HINToutline", extension, outline_node);@/
-@!@:HINToutline\_}{\.{\\HINToutline} primitive@>
-
-primitive("HINTimage", extension, image_node);@/
-@!@:image\_}{\.{\\image} primitive@>
-
-primitive("HINTsetpage", extension, setpage_node);@/
-@!@:setpage\_}{\.{\\setpage} primitive@>
-
-primitive("HINTstream", extension, stream_node);@/
-@!@:stream\_}{\.{\\stream} primitive@>
-
-primitive("HINTsetstream", extension, setstream_node);@/
-@!@:setstream\_}{\.{\\setstream} primitive@>
-
-primitive("HINTbefore", extension, stream_before_node);@/
-@!@:before\_}{\.{\\before} primitive@>
-
-primitive("HINTafter", extension, stream_after_node);@/
-@!@:after\_}{\.{\\after} primitive@>
-
 
 @ The variable |write_loc| just introduced is used to provide an
 appropriate error message in case of ``runaway'' write texts.
@@ -25778,6 +25768,12 @@ case extension: switch (chr_code) {
   case close_node: print_esc("closeout");@+break;
   case special_node: print_esc("special");@+break;
   case image_node: print_esc("HINTimage");@+break;
+  case color_node: print_esc("HINTcolor");@+break;
+  case end_color_node: print_esc("HINTendcolor");@+break;
+  case no_color_node: print_esc("HINTendcolor ignored");@+break;
+  case default_color_node: print_esc("HINTdefaultcolor");@+break;
+  case link_color_node: print_esc("HINTlinkcolor");@+break;
+  case default_link_color_node: print_esc("HINTdefaultlinkcolor");@+break;
   case start_link_node: print_esc("HINTstartlink");@+break;
   case end_link_node: print_esc("HINTendlink");@+break;
   case label_node: print_esc("HINTdest");@+break;
@@ -25800,7 +25796,7 @@ case extension: switch (chr_code) {
   case ignore_node: print("[HINT internal: ignore]");@+break;
   case immediate_code: print_esc("immediate");@+break;
   case set_language_code: print_esc("setlanguage");@+break;
-  @/@t\4@>@<Cases of |extension| for |print_cmd_chr|@>@;
+  @/@<Cases of |extension| for |print_cmd_chr|@>@/
   default:print("[unknown extension!]");
   } @+break;
 
@@ -25831,21 +25827,27 @@ case vset_node:
 case align_node: @+break;@#
 case image_node:@/
 {@+ pointer p;
+  scaled iw=0,ih=0;
+  double ia=0.0;
   scan_optional_equals();
   scan_file_name();
   p=new_image_node(cur_name,cur_area,cur_ext);
   loop {
     if (scan_keyword("width"))
-    {@+scan_normal_dimen; image_xwidth(p)=new_xdimen(cur_val,cur_hfactor,cur_vfactor); }
+    {@+scan_normal_dimen; image_xwidth(p)=new_xdimen(cur_val,cur_hfactor,cur_vfactor);
+     if (cur_hfactor==0 && cur_vfactor==0) iw=cur_val;
+    }
     else if (scan_keyword("height"))
-    {@+scan_normal_dimen; image_xheight(p)=new_xdimen(cur_val,cur_hfactor,cur_vfactor); }
+    {@+scan_normal_dimen; image_xheight(p)=new_xdimen(cur_val,cur_hfactor,cur_vfactor);
+      if (cur_hfactor==0 && cur_vfactor==0) ih=cur_val;
+    }
     else
       break;
   }
-  { scaled iw,ih;
-    double ia;
+  {
     pointer r,q;
-    hextract_image_dimens(image_no(p),&ia,&iw,&ih);
+    if (ih!=0 && iw!=0 ) ia=(double)iw/ih;
+    else hextract_image_dimens(image_no(p),&ia,&iw,&ih);
     image_aspect(p)=round(ia*ONE);
     r=image_xwidth(p);
     q=image_xheight(p);
@@ -25857,8 +25859,8 @@ case image_node:@/
       else if (iw<0)
       { MESSAGE("Unable to determine size of image %s; using 72dpi.\n",
 		dir[image_no(p)].file_name);
-	image_xwidth(p)=r=new_xdimen(-iw*ONE,0,0);
-        image_xheight(p)=q=new_xdimen(-ih*ONE,0,0);
+	image_xwidth(p)=r=new_xdimen(-iw,0,0);
+        image_xheight(p)=q=new_xdimen(-ih,0,0);
       }
       else
       { MESSAGE("Unable to determine size of image %s; using 100pt x 100pt\n",
@@ -25883,19 +25885,66 @@ case image_node:@/
     tail_append(p);
   break;
 }
+case color_node:
+    { ColorSet c;
+      new_whatsit(color_node,color_node_size);
+      scan_color_spec(c,0);
+      color_ref(tail)=next_colorset(c);
+      color_link(tail)=null;
+      default_color_frozen=true;
+    }
+    break;
+case no_color_node: break;
+case end_color_node:
+    { new_whatsit(end_color_node,color_node_size);
+      color_ref(tail)=0xFF;
+      color_link(tail)=null;
+    }
+    break;
+case default_color_node:
+    if (default_color_frozen)
+    { print_err("You can not use \\HINTdefaultcolor after \\HINTcolor");
+      error();
+    }
+    else
+    { ColorSet c;
+      scan_color_spec(c,0);
+      colorset_copy(colors[0],c);
+    }
+    break;
+case link_color_node:
+    { ColorSet c;
+      scan_color_spec(c,1);
+      cur_link_color=next_colorset(c);
+      default_link_color_frozen=true;
+    }
+    break;
+case default_link_color_node:
+    if (default_link_color_frozen)
+    {@+print_err("You can not use \\HINTdefaultlinkcolor after \\HINTlinkcolor");      error();
+    }
+    else
+    { ColorSet c;
+      scan_color_spec(c,1);
+      colorset_copy(colors[1],c);
+    }
+    break;
 case start_link_node:
   if (abs(mode) == vmode)
     fatal_error("HINTstartlink cannot be used in vertical mode");
   else
   { new_whatsit(start_link_node,link_node_size);
-    scan_label(tail);
+    scan_label(as_label(tail));
+    color_ref(tail)=cur_link_color;
   }
   break;
 case end_link_node:
   if (abs(mode) == vmode)
     fatal_error("HINTendlink cannot be used in vertical mode");
   else
-    new_whatsit(end_link_node,link_node_size);
+  { new_whatsit(end_link_node,link_node_size);
+    color_ref(tail)=0xFF;
+  }
   break;
 case label_node:
   new_whatsit(label_node,label_node_size);
@@ -25991,7 +26040,7 @@ case xdimen_node:
 case ignore_node: @+break;
 case immediate_code: @<Implement \.{\\immediate}@>@;@+break;
 case set_language_code: @<Implement \.{\\setlanguage}@>@;@+break;
-@/@t\4@>@<Cases for |do_extension|@>@;
+@/@<Cases for |do_extension|@>@/
 default:confusion("ext1");
 @:this can't happen ext1}{\quad ext1@>
 }
@@ -26122,7 +26171,7 @@ case language_node: {@+print_esc("setlanguage");
   print_int(what_lhm(p));print_char(',');
   print_int(what_rhm(p));print_char(')');
   } @+break;
-@/@t\4@>@<Cases for displaying the |whatsit| node@>@;
+@/@<Cases for displaying the |whatsit| node@>@/
 case param_node: print_esc("parameter ");
   print_int(param_type(p));print_char(',');print_int(param_no(p));
   print_char(':');print_int(param_value(p).i);
@@ -26180,6 +26229,15 @@ case image_node:
   print("), section ");print_int(image_no(p));
   if (image_name(p)!=0) {print(", "); printn(image_name(p));}
   break;
+case color_node:
+  print_esc("HINTcolor ");print_int(color_ref(p));
+  break;
+case no_color_node:
+  print_esc("HINTendcolor ignored");
+  break;
+case end_color_node:
+  print_esc("HINTendcolor ");
+  break;
 case align_node:
   print_esc("align(");
   print(align_m(p)==exactly?"exactly ":"additional ");
@@ -26223,10 +26281,12 @@ case ignore_node:
   break;
 case start_link_node:
   print_esc("HINTstartlink ");
-  print_label(p);
+  print_label(as_label(p));
+  if (color_ref(p)!=1) { print("color "); print_int(color_ref(p)); }
   break;
 case end_link_node:
   print_esc("HINTendlink ");
+  if (color_ref(p)!=0xFF) { print("color "); print_int(color_ref(p)); }
   break;
 case label_node:
   print_esc("HINTdest ");
@@ -26263,7 +26323,7 @@ case write_node: case special_node: case latespecial_node: {@+r=get_node(write_n
 case close_node: case language_node: {@+r=get_node(small_node_size);
   words=small_node_size;
   } @+break;
-@/@t\4@>@<Cases for making a partial copy of the whatsit node@>@;
+@/@<Cases for making a partial copy of the whatsit node@>@/
 case param_node:
 {@+r=get_node(param_node_size);
   if (param_type(p)==glue_type) add_glue_ref(param_value(p).i);
@@ -26309,6 +26369,12 @@ case image_node:
     image_alt(r)=copy_node_list(image_alt(p));
     words=image_node_size-1;
     break;
+case color_node:
+case no_color_node:
+case end_color_node:
+    r=get_node(color_node_size);
+    words=color_node_size;
+    break;
 case align_node:
   {@+r=get_node(align_node_size);
      align_preamble(r)=copy_node_list(align_preamble(p));
@@ -26343,7 +26409,7 @@ case ignore_node:
   break;
 case start_link_node:
     r=get_node(link_node_size);
-    if (label_has_name(p)) add_token_ref(label_ptr(p));
+    if (label_has_name(as_label(p))) add_token_ref(label_ptr(as_label(p)));
     words=link_node_size;
     break;
 case end_link_node:
@@ -26359,6 +26425,7 @@ case outline_node:
     r=get_node(outline_node_size);
     if (label_has_name(p)) add_token_ref(label_ptr(p));
     outline_ptr(r)=copy_node_list(outline_ptr(p));
+    outline_depth(r)=outline_depth(p);
     words=outline_node_size-1;
     break;
 case stream_node:
@@ -26407,6 +26474,10 @@ case image_node:
   delete_xdimen_ref(image_xwidth(p)); delete_xdimen_ref(image_xheight(p));
   flush_node_list(image_alt(p));
   free_node(p,image_node_size);@+break;
+case color_node:
+case no_color_node:
+case end_color_node:
+  free_node(p,color_node_size);@+break;
 case align_node:
   delete_xdimen_ref(align_extent(p));
   flush_node_list(align_preamble(p));
@@ -26431,7 +26502,7 @@ case ignore_node:
   flush_node_list(ignore_list(p));
   free_node(p,ignore_node_size); @+break;
 case start_link_node:
-  if (label_has_name(p)) delete_token_ref(label_ptr(p));
+  if (label_has_name(as_label(p))) delete_token_ref(label_ptr(as_label(p)));
   free_node(p,link_node_size);@+break;
 case end_link_node:
   free_node(p,link_node_size);@+break;
@@ -26446,7 +26517,7 @@ case stream_node:
   free_node(p,stream_node_size); @+break;
 case xdimen_node:
   free_node(p,xdimen_node_size);
-@/@t\4@>@<Cases for wiping out the whatsit node@>@;
+@/@<Cases for wiping out the whatsit node@>@/
 default:confusion("ext3");
 @:this can't happen ext3}{\quad ext3@>
 } @/
@@ -26459,7 +26530,7 @@ goto done;
 
 @ @<Let |d| be the width of the whatsit |p|@>=d=0
 
-@ @d adv_past(A) if (subtype(A)==language_node)
+@ @d adv_past(A) @+if (subtype(A)==language_node)
     {@+cur_lang=what_lang(A);l_hyf=what_lhm(A);r_hyf=what_rhm(A);
     set_hyph_index;
     }
@@ -26558,7 +26629,8 @@ end_token_list() /*conserve stack space*/
 @.Unbalanced write...@>
 help2("On this page there's a \\write with fewer real {'s than }'s.",@/
 "I can't handle that very well; good luck.");error();
-do get_token(); while (!(cur_tok==end_write_token));
+@/do@+{get_token();
+}@+ while (!(cur_tok==end_write_token));
 }
 
 @ The |out_what| procedure takes care of outputting whatsit nodes for
@@ -27029,9 +27101,9 @@ a=1;
 print_nl("");print_ln();
 loop@+{@+print_nl("### ");print_group(true);
   if (cur_group==bottom_level) goto done;
-  do {m=nest[p].mode_field;
+  @/do@+{m=nest[p].mode_field;
   if (p > 0) decr(p);else m=vmode;
-  } while (!(m!=hmode));
+  }@+ while (!(m!=hmode));
   print(" (");
   switch (cur_group) {
     case simple_group: {@+incr(p);goto found2;
@@ -27156,7 +27228,7 @@ scanner_status=s;warning_index=w;def_ref=d;
 
 @ The \.{\\showtokens} command displays a token list.
 
-@d show_tokens 5 /* \.{\\showtokens}, must be odd! */
+@d show_tokens 5 /* \.{\\showtokens} , must be odd! */
 
 @<Generate all \eTeX...@>=
 primitive("showtokens", xray, show_tokens);
@@ -27179,9 +27251,9 @@ primitive("unexpanded", the, 1);@/
 primitive("detokenize", the, show_tokens);@/
 @!@:detokenize\_}{\.{\\detokenize} primitive@>
 
-@ @<Cases of |the| for |print_cmd_chr|@>=
-if (chr_code==1) print_esc("unexpanded");
-else print_esc("detokenize");
+@ @<Cases of |the| for |print_cmd_chr|@>=;
+else if (chr_code==1) print_esc("unexpanded");
+else print_esc("detokenize")
 
 @ @<Handle \.{\\unexpanded} or \.{\\detokenize} and |return|@>=
 if (odd(cur_chr))
@@ -27216,14 +27288,14 @@ case show_ifs: {@+begin_diagnostic();print_nl("");print_ln();
     {@+print_nl("### ");print("no active conditionals");
     }
   else{@+p=cond_ptr;n=0;
-    do {incr(n);p=link(p);@+} while (!(p==null));
+    @/do@+{incr(n);p=link(p);@+}@+ while (!(p==null));
     p=cond_ptr;t=cur_if;l=if_line;m=if_limit;
-    do {print_nl("### level ");print_int(n);print(": ");
+    @/do@+{print_nl("### level ");print_int(n);print(": ");
     print_cmd_chr(if_test, t);
     if (m==fi_code) print_esc("else");
     print_if_line(l);
     decr(n);t=subtype(p);l=if_line_field(p);m=type(p);p=link(p);
-    } while (!(p==null));
+    }@+ while (!(p==null));
     }
   } @+break;
 
@@ -27234,17 +27306,17 @@ interaction mode.
 primitive("interactionmode", set_page_int, 2);
 @!@:interaction\_mode\_}{\.{\\interactionmode} primitive@>
 
-@ @<Cases of |set_page_int| for |print_cmd_chr|@>=
-if (chr_code==2) print_esc("interactionmode");
+@ @<Cases of |set_page_int| for |print_cmd_chr|@>=;
+else if (chr_code==2) print_esc("interactionmode")
 
-@ @<Cases for `Fetch the |dead_cycles| or the |insert_penalties|'@>=
-if (m==2) cur_val=interaction;
+@ @<Cases for `Fetch the |dead_cycles| or the |insert_penalties|'@>=;
+else if (m==2) cur_val=interaction
 
 @ @<Declare \eTeX\ procedures for use...@>=
 static void new_interaction(void);
 
-@ @<Cases for |alter_integer|@>=
-if (c==2)
+@ @<Cases for |alter_integer|@>=;
+else if (c==2)
   {@+if ((cur_val < batch_mode)||(cur_val > error_stop_mode))
     {@+print_err("Bad interaction mode");
 @.Bad interaction mode@>
@@ -27263,8 +27335,8 @@ delimiters to appear between \.{\\left} and \.{\\right}.
 primitive("middle", left_right, middle_noad);
 @!@:middle\_}{\.{\\middle} primitive@>
 
-@ @<Cases of |left_right| for |print_cmd_chr|@>=
-if (chr_code==middle_noad) print_esc("middle");
+@ @<Cases of |left_right| for |print_cmd_chr|@>=;
+else if (chr_code==middle_noad) print_esc("middle")
 
 @ The |scan_tokens| feature of \eTeX\ defines the \.{\\scantokens}
 primitive.
@@ -27273,11 +27345,11 @@ primitive.
 primitive("scantokens", input, 2);
 @!@:scan\_tokens\_}{\.{\\scantokens} primitive@>
 
-@ @<Cases of |input| for |print_cmd_chr|@>=
-if (chr_code==2) print_esc("scantokens");
+@ @<Cases of |input| for |print_cmd_chr|@>=;
+else if (chr_code==2) print_esc("scantokens")
 
-@ @<Cases for |input|@>=
-if (cur_chr==2) pseudo_start();
+@ @<Cases for |input|@>=;
+else if (cur_chr==2) pseudo_start()
 
 @ The global variable |pseudo_files| is used to maintain a stack of
 pseudo files.  The |info| field of each pseudo file points to a linked
@@ -27403,8 +27475,8 @@ while (pseudo_files!=null) pseudo_close(); /*flush pseudo files*/
 primitive("readline", read_to_cs, 1);@/
 @!@:read\_line\_}{\.{\\readline} primitive@>
 
-@ @<Cases of |read| for |print_cmd_chr|@>=
-print_esc("readline");
+@ @<Cases of |read| for |print_cmd_chr|@>=;
+else print_esc("readline")
 
 @ @<Handle \.{\\readline} and |goto done|@>=
 if (j==1)
@@ -27479,9 +27551,9 @@ preceding the mandatory \.{\\endcsname} have been expanded).
 
 @<Cases for |conditional|@>=
 case if_cs_code: {@+n=get_avail();p=n; /*head of the list of characters*/
-  do {get_x_token();
+  @/do@+{get_x_token();
   if (cur_cs==0) store_new_token(cur_tok);
-  } while (!(cur_cs!=0));
+  }@+ while (!(cur_cs!=0));
   if (cur_cmd!=end_cs_name) @<Complain about missing \.{\\endcsname}@>;
   @<Look up the characters of list |n| in the hash table, and set |cur_cs|@>;
   flush_list(n);
@@ -27523,8 +27595,8 @@ or during \.{\\write}.
 primitive("protected", prefix, 8);
 @!@:protected\_}{\.{\\protected} primitive@>
 
-@ @<Cases of |prefix| for |print_cmd_chr|@>=
-if (chr_code==8) print_esc("protected");
+@ @<Cases of |prefix| for |print_cmd_chr|@>=;
+else if (chr_code==8) print_esc("protected")
 
 @ The |get_x_or_protected| procedure is like |get_x_token| except that
 protected macros are not expanded.
@@ -27762,7 +27834,7 @@ resume: if (s==expr_none) o=l;@+else o=int_val;
 found: @<Scan the next operator and set |o|@>;
 arith_error=b;
 @<Make sure that |f| is in the proper range@>;
-switch (s) {@t\4@>@<Cases for evaluation of the current term@>@;
+switch (s) {@<Cases for evaluation of the current term@>@;
 }  /*there are no other cases*/
 if (o > expr_sub) s=o;@+else@<Evaluate the current expression@>;
 b=arith_error;
@@ -28423,12 +28495,12 @@ else{@+if (sa_index(q) < mu_val_limit)
   else if (sa_ptr(q)!=null) return;
   s=pointer_node_size;
   }
-do {i=hex_dig4(sa_index(q));p=q;q=link(p);free_node(p, s);
+@/do@+{i=hex_dig4(sa_index(q));p=q;q=link(p);free_node(p, s);
 if (q==null)  /*the whole tree has been freed*/
   {@+sa_root[i]=null;return;
   }
 delete_sa_ptr;s=index_node_size; /*node |q| is an index node*/
-} while (!(sa_used(q) > 0));
+}@+ while (!(sa_used(q) > 0));
 }
 
 @ The |print_sa_num| procedure prints the register number corresponding
@@ -28531,7 +28603,7 @@ if (l < 4)  /*|q| is an index node*/
   }
 else /*|q| is the node for a mark class*/
   {@+switch (a) {
-  @t\4@>@<Cases for |do_marks|@>@;
+  @<Cases for |do_marks|@>@;
   }  /*there are no other cases*/
   if (sa_bot_mark(q)==null) if (sa_split_bot_mark(q)==null)
     {@+free_node(q, mark_class_node_size);q=null;
@@ -28808,7 +28880,7 @@ at by |sa_chain|
 @<Declare \eTeX\ procedures for tr...@>=
 static void sa_restore(void)
 {@+pointer p; /*sparse array element*/
-do {p=sa_loc(sa_chain);
+@/do@+{p=sa_loc(sa_chain);
 if (sa_lev(p)==level_one)
   {@+if (sa_index(p) >= dimen_val_limit) sa_destroy(sa_chain);
 #ifdef @!STAT
@@ -28831,7 +28903,7 @@ delete_sa_ref(p);
 p=sa_chain;sa_chain=link(p);
 if (sa_index(p) < dimen_val_limit) free_node(p, word_node_size);
 else free_node(p, pointer_node_size);
-} while (!(sa_chain==null));
+}@+ while (!(sa_chain==null));
 }
 
 @ When reading \.{\\patterns} while \.{\\savinghyphcodes} is positive
@@ -28852,8 +28924,8 @@ hyph_root=0;hyph_start=0;
 
 @ @<Store hyphenation codes for current language@>=
 {@+c=cur_lang;first_child=false;p=0;
-do {q=p;p=trie_r[q];
-} while (!((p==0)||(c <= so(trie_c[p]))));
+@/do@+{q=p;p=trie_r[q];
+}@+ while (!((p==0)||(c <= so(trie_c[p]))));
 if ((p==0)||(c < so(trie_c[p])))
   @<Insert a new trie node between |q| and |p|, and make |p| point to it@>;
 q=p; /*now node |q| represents |cur_lang|*/
@@ -28931,9 +29003,9 @@ primitive("pagediscards", un_vbox, last_box_code);@/
 primitive("splitdiscards", un_vbox, vsplit_code);@/
 @!@:split\_discards\_}{\.{\\splitdiscards} primitive@>
 
-@ @<Cases of |un_vbox| for |print_cmd_chr|@>=
-if (chr_code==last_box_code) print_esc("pagediscards");
-else if (chr_code==vsplit_code) print_esc("splitdiscards");
+@ @<Cases of |un_vbox| for |print_cmd_chr|@>=;
+else if (chr_code==last_box_code) print_esc("pagediscards");
+else if (chr_code==vsplit_code) print_esc("splitdiscards")
 
 @ @<Handle saved items and |goto done|@>=
 {@+link(tail)=disc_ptr[cur_chr];disc_ptr[cur_chr]=null;
@@ -28993,7 +29065,7 @@ expand_depth_count=0;
 @* The extended features of \Prote.
 \Prote\ extends furthermore \eTeX\ i.e. \eTeX\ is thus required
 before adding \Prote\ own extensions. But if \eTeX\ mode has not
-be enabled, the engine is still compatible with \TeX\ with no added
+be enabled, the engine is still compatible with \TeX with no added
 primitive commands and with a modification of code---from
 \eTeX\ exclusively for now---that is sufficiently minor so that
 the engine still deserves the name \TeX.
@@ -29288,7 +29360,7 @@ hash since |no_new_control_sequence| is |true|), but since it has the
 for a control sequence entered but never defined.
 
 @ @<Cases for |conditional|@>=
-case if_primitive_code: {@+do get_token(); while (!(cur_tok!=space_token));
+case if_primitive_code: {@+@/do@+{get_token();}@+ while (!(cur_tok!=space_token));
 if ((cur_cs!=0)&&(cur_cmd!=undefined_cs)&&(cur_cmd < call)) b=true;else b=false;
 } @+break;
 
@@ -29650,7 +29722,7 @@ dependent. The information shall be set in |xchg_buffer|.
 @^system dependencies@>
 
 In this basic implementation, we set the string to the empty one by
-simply setting |xchg_buffer_length| to~$0$.
+simply setting |xchg_buffer_length| to $0$.
 
 @d get_file_mtime xchg_buffer_length=0
 
@@ -29727,10 +29799,10 @@ case file_dump_code:
   { FILE *f=fopen((char*)name_of_file0,"rb");
     if (f!=NULL) {@+
       fseek(f,k,SEEK_SET);
-      do {i=fgetc(f); if (i==EOF) break;
+      do@+{i=fgetc(f); if (i==EOF) break;
            dig[0]=i%16;dig[1]=i/16;
            print_the_digs(2);decr(l);
-       } while (!(feof(f)||(l==0)));
+       }@+ while (!(feof(f)||(l==0)));
       fclose(f);
     }
   } @+break;
@@ -29830,7 +29902,7 @@ communicate with the routines.
 
 @ To obtain the MD5 hash signature of a file will need an external
 implementation, since the algorithm requires bitwise operation that
-standard \PASCAL\ does not provide. So we do not bother to try. The
+standard \PASCAL does not provide. So we do not bother to try. The
 present implementation returns nothing.
 @^system dependencies@>
 
@@ -30015,7 +30087,7 @@ else{@+n=(n-1)*mpfract_one;
   }
 }
 
-@ The |do {| loop here preserves the following invariant relations
+@ The |@/do@+{| loop here preserves the following invariant relations
 between |f|, |p|, and~|q|:
 (i)~|0 <= p < q|; (ii)~$fq+p=2^k(q+p_0)$, where $k$ is an integer and
 $p_0$ is the original value of~$p$.
@@ -30030,11 +30102,11 @@ in a register, not store it in memory.
 
 @<Compute $f=\lfloor 2^{28}(1+p/q)+{1\over2}\rfloor$@>=
 f=1;
-do {be_careful=p-q;p=be_careful+p;
+@/do@+{be_careful=p-q;p=be_careful+p;
 if (p >= 0) f=f+f+1;
 else{@+double(f);p=p+q;
   }
-} while (!(f >= mpfract_one));
+}@+ while (!(f >= mpfract_one));
 be_careful=p-q;
 if (be_careful+p >= 0) incr(f)
 
@@ -30057,7 +30129,7 @@ else{@+n=f/mpfract_one;f=f%mpfract_one;
     }
   }
 f=f+mpfract_one;
-@<Compute $p=\lfloor qf/2^{28}+{1\over2}\rfloor-q$@>@;
+@<Compute $p=\lfloor qf/2^{28}+{1\over2}\rfloor-q$@>;
 be_careful=n-el_gordo;
 if (be_careful+p > 0)
   {@+arith_error=true;n=el_gordo-p;
@@ -30082,12 +30154,12 @@ $f_0$ is the original value of~$f$; (ii)~$2^k\L f<2^{k+1}$.
 @<Compute $p=\lfloor qf/2^{28}+{1\over2}\rfloor-q$@>=
 p=mpfract_half; /*that's $2^{27}$; the invariants hold now with $k=28$*/
 if (q < mpfract_four)
-  do {if (odd(f)) p=halfp(p+q);@+else p=halfp(p);
+  @/do@+{if (odd(f)) p=halfp(p+q);@+else p=halfp(p);
   f=halfp(f);
-  } while (!(f==1));
-else do {if (odd(f)) p=p+halfp(q-p);@+else p=halfp(p);
+  }@+ while (!(f==1));
+else@/do@+{if (odd(f)) p=p+halfp(q-p);@+else p=halfp(p);
   f=halfp(f);
-  } while (!(f==1));
+  }@+ while (!(f==1))
 
 @ There's an auxiliary array |randoms| that contains 55 pseudo-random
 fractions. Using the recurrence $x_n=(x_{n-55}-x_{n-31})\bmod 2^{28}$,
@@ -30275,15 +30347,15 @@ can readily be obtained with the ratio method (Algorithm 3.4.1R in
 static scaled norm_rand(void)
 {@+int @!x, @!u, @!l; /*what the book would call $2^{16}X$, $2^{28}U$,
   and $-2^{24}\ln U$*/
-do {
-  do {next_random;
+@/do@+{
+  @/do@+{next_random;
   x=take_mpfract(112429, randoms[j_random]-mpfract_half);
      /*$2^{16}\sqrt{8/e}\approx 112428.82793$*/
   next_random;u=randoms[j_random];
-  } while (!(abs(x) < u));
+  }@+ while (!(abs(x) < u));
 x=make_mpfract(x, u);
 l=139548960-m_log(u); /*$2^{24}\cdot12\ln2\approx139548959.6165$*/
-} while (!(ab_vs_cd(1024, l, x, x) >= 0));
+}@+ while (!(ab_vs_cd(1024, l, x, x) >= 0));
 return x;
 }
 
@@ -30467,6 +30539,13 @@ format that this program will generate.
 
 @d HINT_version_code (eTeX_last_last_item_cmd_mod+7) /* \.{\\HINTversion} */
 @d HINT_minor_version_code (eTeX_last_last_item_cmd_mod+8) /* \.{\\HINTminorversion} */
+
+@<Put each...@>=
+primitive("HINTversion", last_item, HINT_version_code);
+@!@:HINT\_version\_}{\.{\\HINTversion} primitive@>
+primitive("HINTminorversion", last_item, HINT_minor_version_code);
+@!@:HINT\_minor\_version\_}{\.{\\HINTminorversion} primitive@>
+
 
 @ Now this new primitive needs its implementation.
 
@@ -30683,12 +30762,15 @@ static void hline_break(int final_widow_penalty)
   pointer pp;
   scaled par_max_depth=0;
   bool par_shape_fix=false;
+  @<initialize the color stack@>@,
+#if DEBUG
   if (DBGTEX&debugflags)
   { print_ln();print("Before hline_break:\n");
     breadth_max=200;
     depth_threshold=200;
     show_node_list(link(head));print_ln();
   }
+#endif
   if (dimen_par_hfactor(hsize_code)==0 && dimen_par_vfactor(hsize_code)==0)
   { line_break(final_widow_penalty); /* the easy case */
     return;
@@ -30757,8 +30839,13 @@ static void hline_break(int final_widow_penalty)
     }
     switch (type(cur_p))
 	{ case whatsit_node:
-	    adv_past(cur_p);
-		break;
+          { pointer p=cur_p; /* reusing code written for |p| */
+	    switch (subtype(cur_p))
+	    { @<cases that flatten the color stack@>
+             default: adv_past(cur_p); break;
+            }
+            break;
+	  }
 	  case glue_node:
      	if (auto_breaking) /* Try to hyphenate the following word*/
 		  hyphenate_word();
@@ -30857,9 +30944,535 @@ of the normal {\tt \BS hsize} and the given length.
   par_shape_fix=true;
 }
 
+@*1 Colors.
+Hi\TeX\ adds these primitives to handle colors:
+
+@<Put each...@>=
+primitive("HINTcolor", extension, color_node);@/
+@!@:HINTcolor\_}{\.{\\HINTcolor} primitive@>
+primitive("HINTendcolor", extension, end_color_node);@/
+@!@:HINTendcolor\_}{\.{\\HINTendcolor} primitive@>
+primitive("HINTdefaultcolor", extension, default_color_node);@/
+@!@:HINTdefaultcolor\_}{\.{\\HINTdefaultcolor} primitive@>
+primitive("HINTlinkcolor", extension, link_color_node);@/
+@!@:HINTlinkcolor\_}{\.{\\HINTlinkcolor} primitive@>
+primitive("HINTdefaultlinkcolor", extension, default_link_color_node);@/
+@!@:HINTdefaultlinkcolor\_}{\.{\\HINTdefaultlinkcolor} primitive@>
+
+@ To begin with the implementation,
+we need the function |scan_scaled| which is a simpler version of |scan_dimen|.
+It will just scan a pure number without any units.
+We need this function to scan colors.
+
+@<Declare procedures needed in |do_extension|@>=
+static void scan_scaled(void)
+{@+
+  bool negative=false; /*should the answer be negated?*/
+  int @!f; /*numerator of a fraction whose denominator is $2^{16}$*/
+  int @!k, @!kk; /*number of digits in a decimal fraction*/
+  pointer @!p, @!q; /*top of decimal digit stack*/
+  f=0;arith_error=false;cur_order=normal;negative=false;
+  @<Get the next non-blank non-call token@>;
+  if (cur_tok==other_token+'-') negative=true;
+  else if (cur_tok==other_token+'+') negative=false;
+  else back_input();
+  if (cur_tok==continental_point_token) cur_tok=point_token;
+  if (cur_tok!=point_token) scan_int();
+  else {@+radix=10;cur_val=0; }
+  if (cur_tok==continental_point_token) cur_tok=point_token;
+  if ((radix==10)&&(cur_tok==point_token)) @<Scan decimal fraction@>;
+  if (cur_val < 0)  /*in this case |f==0|*/
+    {@+negative=!negative;negate(cur_val);}
+  if (cur_val >= 040000) arith_error=true;
+  else cur_val=cur_val*unity+f;
+  @<Scan an optional space@>;
+  if (arith_error||(abs(cur_val) >= 010000000000))
+    @<Report that this dimension is out of range@>;
+  if (negative)  negate(cur_val);
+}
+
+@ A color specification starting with ``FG'' or ``BG'' expects
+integers in the range 0 to |0xFF|;
+a color specification starting with ``fg'' or ``bg'' expects
+real numbers in the range 0 to 1.
+ The last component for the alpha value is optional and its default value is |0xFF| respectively 1.0.
+The color components are enclosed in braces.
+After the initial brace the keyword \.{rgb} specifies color values encoded with red/green/blue/alpha values;
+the keyword \.{cmyk} specifies color values encoded with cyan/magenta/yellow/black/alpha values.
+Giving no keyword is equivalent to giving the keyword \.{rgb}.
+
+@<Declare procedures needed in |do_extension|@>=
+static uint8_t scan_rgb_component(bool expect_reals)
+{ if (expect_reals)
+  { scan_scaled(); cur_val=(cur_val*0xFF+0x1000)>>16; }
+  else
+    scan_int();
+  if (cur_val>0xFF) return 0xFF;
+  else if (cur_val<0) return 0x00;
+  else return cur_val;
+}
+
+static uint32_t scan_rgb_color(bool expect_reals)
+{ uint8_t r,g,b,a;
+  r=scan_rgb_component(expect_reals);
+  g=scan_rgb_component(expect_reals);
+  b=scan_rgb_component(expect_reals);
+  a=0xFF;
+  @<Get the next non-blank non-relax...@>;
+  if (cur_cmd!=right_brace)
+  { back_input();
+    a=scan_rgb_component(expect_reals);
+    @<Get the next non-blank non-call token@>;
+    if (cur_cmd!=right_brace)
+    { back_input();
+      print_err("Missing right brace after color definition");
+    }
+  }
+  return (r<<24)|(g<<16)|(b<<8)|a;
+}
+
+static double scan_cmyk_component(bool expect_reals)
+{ double c;
+  if (expect_reals)
+  { scan_scaled(); c=cur_val/(double)ONE;
+  }
+  else
+  { scan_int(); c=cur_val/255.0;
+  }
+  if (c>1.0) return 1.0;
+  else if (c<0.0) return 0.0;
+  else return c;
+}
+
+
+static uint32_t scan_cmyk_color(bool expect_reals)
+{ uint8_t r,g,b,a;
+  double c,m,y,k;
+  c=scan_cmyk_component(expect_reals);
+  m=scan_cmyk_component(expect_reals);
+  y=scan_cmyk_component(expect_reals);
+  k=scan_cmyk_component(expect_reals);
+  a=0xFF;
+  @<Get the next non-blank non-relax...@>;
+    if (cur_cmd!=right_brace)
+  { back_input();
+    a=scan_cmyk_component(expect_reals)*0xFF+0.5;
+    @<Get the next non-blank non-call token@>;
+    if (cur_cmd!=right_brace)
+    { back_input();
+      print_err("Missing right brace after color definition");
+    }
+  }
+  r=(1-c)*(1-k)*255+0.5;
+  g=(1-m)*(1-k)*255+0.5;
+  b=(1-y)*(1-k)*255+0.5;
+  return (r<<24)|(g<<16)|(b<<8)|a;
+}
+
+static uint32_t scan_color(bool expect_reals)
+{ uint8_t r,g,b,a;
+  scan_left_brace();
+  if (scan_keyword("cmyk"))
+     return scan_cmyk_color(expect_reals);
+  else if (scan_keyword("rgb"))
+     return scan_rgb_color(expect_reals);
+  else
+    return scan_rgb_color(expect_reals);
+}
+
+@ Colors are specified in pairs of a foreground color, prefixed
+by ``FG'' or ``fg'', followed by an optional background color
+prefixed by ``BG'' or ``bg''.
+Up to three color pairs, for normal text, highlighted text, and focus text
+make up a color set. A color specification can contain two
+color sets the first one for ``day mode'' the second, prefixed
+by the keyword ``dark'' for ``night mode''.
+
+@<Declare procedures needed in |do_extension|@>=
+static void colorset_copy(ColorSet to, ColorSet from)
+{ int i;
+  for (i=0;i<sizeof(ColorSet)/sizeof(uint32_t);i++)
+    to[i]=from[i];
+}
+
+static bool scan_color_pair(ColorSet c, int m, int s)
+{ if (scan_keyword("FG")) c[m*6+s*2+0] =scan_color(false);
+  else if (scan_keyword("fg")) c[6*m+2*s+0]=scan_color(true);
+  else return false;
+  if (scan_keyword("BG")) c[m*6+s*2+1]=scan_color(false);
+  else if (scan_keyword("bg")) c[m*6+s*2+1]=scan_color(true);
+  return true;
+}
+
+static void scan_color_triple(ColorSet c, int m)
+{ if (!scan_color_pair(c,m,0))
+  { print_err("Missing color specification");
+    return;
+  }
+  if (scan_color_pair(c,m,1)) scan_color_pair(c,m,2);
+}
+
+static void scan_color_spec(ColorSet c, int i)
+{ colorset_copy(c,colors[i]); /* initialize with defaults */
+  scan_left_brace();
+  scan_color_triple(c,0);
+  if (scan_keyword("dark")) scan_color_triple(c,1);
+  @<Get the next non-blank non-relax non-call token@>;
+  if (cur_cmd!=right_brace)
+  {@+print_err("A color specification must end with }");
+    back_error();
+  }
+}
+
+@ We store color sets in a dynamic array
+
+@<Forward declarations@>=
+static ColorSet *colors=NULL;
+static int max_color=-1, colors_allocated=0;
+static bool default_color_frozen=false, default_link_color_frozen=false;
+static int cur_link_color=1;
+static int next_colorset(ColorSet c);
+
+@ @<Hi\TeX\ auxiliary routines@>=
+static bool colorset_equal(ColorSet old, ColorSet new)
+{ int i;
+  for (i=0;i<sizeof(ColorSet)/sizeof(uint32_t);i++)
+    if (old[i]!=new[i]) return false;
+  return true;
+}
+
+
+static int next_colorset(ColorSet c)
+{ int i;
+  for (i=0; i<=max_color; i++)
+    if (colorset_equal(colors[i],c)) return i;
+  if (max_color<0xFF) max_ref[color_kind]=++max_color;
+  else overflow("colors",0xFF);
+  if (max_color>=colors_allocated)
+    RESIZE(colors,colors_allocated,ColorSet);
+  colorset_copy(colors[max_color],c);
+#if DEBUG
+  if (debugflags&DBGDEF)
+  { print_nl("HINT Defining new color "); print_int(max_color);print(": ");
+    print_color_spec(max_color); }
+#endif
+  return max_color;
+}
+
+@ @<Initialize definitions for colors@>=
+colors_allocated=8;
+ALLOCATE(colors,colors_allocated,ColorSet);
+max_ref[color_kind]=max_color=MAX_COLOR_DEFAULT;
+memcpy(colors,color_defaults,sizeof(ColorSet)*(max_color+1));
+
+
+@ Next we implement a procedure to print a color specification.
+
+@ @<Hi\TeX\ auxiliary routines@>=
+
+static bool is_default_color_pair(ColorSet c, int m, int s)
+{ return c[6*m+2*s] == colors[0][6*m+2*s]
+      && c[6*m+2*s+1] == colors[0][6*m+2*s+1];
+}
+
+static void print_color(uint32_t c)
+{ print_char('{');
+  print_hex((c>>24)&0xFF);print_char(' ');
+  print_hex((c>>16)&0xFF);print_char(' ');
+  print_hex((c>>8)&0xFF);print_char(' ');
+  if ((c&0xFF)!=0xFF) print_hex(c&0xFF);
+  print_char('}');
+}
+
+static void print_color_pair(ColorSet c, int m, int s)
+{ print("FG"); print_color(c[6*m+2*s+0]);
+  print(" BG"); print_color(c[6*m+2*s+1]);
+}
+
+static void print_color_triple(ColorSet c, int m)
+{ bool diff_high, diff_focus;
+  print_color_pair(c,m,0);
+  diff_high= is_default_color_pair(c,m,1);
+  diff_focus= is_default_color_pair(c,m,2);
+  if (diff_high || diff_focus)
+  { print_char(' '); print_color_pair(c,m,1); }
+  if (diff_focus)
+  { print_char(' '); print_color_pair(c,m,2); }
+}
+
+static void print_color_spec(int i)
+{ if (i>max_color) {print("undefined color "); print_int(i);}
+  else if (i<0 || i>0xFF) { print("illegal color "); print_int(i);}
+  else
+  { print_color_triple(colors[i],0);
+    if (is_default_color_pair(colors[i],1,0) &&
+        is_default_color_pair(colors[i],1,1) &&
+	is_default_color_pair(colors[i],1,2))
+	return;
+    print(" dark "); print_color_triple(colors[i],1);
+  }
+}
+
+@ @<Forward declarations@>=
+static void print_color_spec(int i);
+
+@ To create a color node you can use the following function:
+@<Hi\TeX\ auxiliary routines@>=
+static pointer new_color_node(uint8_t c)
+{ pointer r = get_node(color_node_size);
+  type(r)=whatsit_node;subtype(r)=color_node;
+  color_ref(r)=c; color_link(r)=null;
+  return r;
+}
+
+@ @<Forward declarations@>=
+static void print_color_spec(int i);
+static pointer new_color_node(uint8_t c);
+
+@ Writing a color node to the output is simple.
+When we come to the output routine, every |end_color_node|
+should have been replaced by a |color_node|.
+To switch back to the color of the enclosing box,
+a |color_node| uses the color reference |0xFF|.
+An |end_color_node| is converted to a |color_node|
+when flattening the color stack.
+If an |end_color_node| does not have
+a matching |color_node| it is converted
+into a |no_color_node| which is silently ignored.
+If an |end_color_node| remains, it is ignored as well.
+
+@<cases to output whatsit content nodes@>=
+case color_node:
+  HPUT8(color_ref(p));
+  tag=TAG(color_kind,b000);
+  break;
+case no_color_node:
+case end_color_node:
+  hpos--;
+  return;
+
+@ For the top level color nodes we provide a function to output colors
+without the need to construct (and destroy) a color node.
+
+@<Hi\TeX\ auxiliary routines@>=
+static void hout_color_ref(uint8_t c)
+{ uint8_t tag=TAG(color_kind,b000);
+  HPUTNODE;
+  HPUT8(tag);
+  HPUT8(c);
+  HPUT8(tag);
+}
+
+@ The output of color definitions is more complex:
+
+@<Output color definitions@>=
+  DBG(DBGDEF,"DEfining %d color references\n",max_ref[color_kind]);
+  HPUTX((1+1+1+sizeof(ColorSet)+1)*(max_ref[color_kind]+1));
+  for (i=max_fixed[color_kind]+1;i<=max_default[color_kind]; i++)
+    { if (!colorset_equal(colors[i],color_defaults[i]))
+        HPUTDEF(hout_color_def(colors[i]),i);
+    }
+  for (;i<=max_ref[color_kind]; i++)
+           HPUTDEF(hout_color_def(colors[i]),i);
+
+@ @<Hi\TeX\ auxiliary routines@>=
+static Tag hout_color_def(ColorSet c)
+{ int i;
+//  HPUTX(3+12*4);
+  HPUT8(6);
+  for (i=0;i<sizeof(ColorSet)/sizeof(uint32_t);i++)
+    HPUT32(c[i]);
+  return TAG(color_kind,b000);
+}
+
+@ Hi\TeX\ treats colors different than \HINT\ files:
+Hi\TeX\ maintains a color stack inside a box while \HINT\
+files implement only a flat sequence of colors inside a box.
+As a consequence an |end_color_node| must be converted to a
+plain |color_node|. An |end_color_node| without a matching
+|color_node| is converted to a |no_color_node|, so that after
+flattening a node list no |end_color_node| remains.
+It will make flattening a list idempotent.
+Since link nodes are part of the color change
+mechanism they are part of the color stack.
+The color stack is a linked stack using the |color_link| field
+of color and link nodes. A pointer to the top node on this stack
+is in the variable |color_tos|. A pointer to the top link node
+on this stack (if any) is in the variable |link_tos|.
+Note that links are not nested, hence the |link_tos| variable
+is not strictly necessary but it avoids searching the color
+stack for a link node.
+
+@<Global variables@>=
+static  pointer color_tos=null;
+static  pointer link_tos=null;
+
+@ @<initialize the color stack@>=
+color_tos=null;
+link_tos=null;
+
+@ @<Incorporate a |color_node| into the box@>=
+color_link(p)=color_tos;
+color_tos=p;
+
+@ @<Incorporate an |end_color_node| into the box@>=
+if (color_tos==link_tos)
+  subtype(p)=no_color_node;
+else if (color_tos!=null)
+{ color_tos=color_link(color_tos);
+  subtype(p)=color_node;
+  if (color_tos!=null)
+    color_ref(p)=color_ref(color_tos);
+  else
+    color_ref(p)=0xFF;
+}
+else
+  subtype(p)=no_color_node;
+
+@ In contrast, link nodes must not be nested, and an |end_link_node|
+  is mandatory. So a link stack is not necessary. Hi\TeX\ just maintains
+  a pointer to current |start_link_node| to be able to restore the color stack.
+
+@<Incorporate a |start_link_node| into the box@>=
+if (link_tos!=null)
+{@+begin_diagnostic();
+  print_err("This link is preceeded by a \\HINTlink without \\HINTendlink:");
+  end_diagnostic(true);
+}
+@<Incorporate a |color_node| into the box@>@;
+link_tos= color_tos;
+
+@ @<Incorporate an |end_link_node| into the box@>=
+if (link_tos==null)
+{@+begin_diagnostic();
+  print_err("\\HINTendlink without matching \\HINTlink:");
+  end_diagnostic(true);
+}
+else
+{ color_tos=color_link(link_tos);
+  link_tos=null;
+  if (color_tos!=null)
+    color_ref(p)=color_ref(color_tos);
+  else
+    color_ref(p)=0xFF;
+}
+
+@ Together these routines flatten the color stack.
+ @<cases that flatten the color stack@>=
+case color_node:
+  @<Incorporate a |color_node| into the box@>@; break;
+case end_color_node:
+  @<Incorporate an |end_color_node| into the box@>@; break;
+case start_link_node:
+  @<Incorporate a |start_link_node| into the box@>@; break;
+case end_link_node:
+  @<Incorporate an |end_link_node| into the box@>@; break;
+case no_color_node: break;
+
+@ Special care is needed for color changes in the top level vertical
+list. Because this list can grow quite large, nodes are deallocated
+right after being written to the output file. Therefore maintaining
+the color stack in the color nodes contained in the vertical list
+is not quite possible. Further page breaks can occur at many different
+places and to switch to the correct color, we might need to insert color
+nodes at all points where a new page might start.
+
+Page breaks are possible
+at glue nodes if the preceeding node was descardable
+(a node is descardable if its type is less than |math_node|),
+at kern nodes if they precede a glue node
+and at penalty nodes. It is inconvenient to test whether a kern node is
+followed by glue node; but because the kern node will disapear
+in the page break, it is sufficient to postpone the color information
+and insert it after the following glue node. If there are several
+glue or kern nodes in a row, it is sufficient to insert the color
+information only once at the beginning.
+
+We keep track of the possible breaks
+and the color stack using four static variables.
+
+@<Define the top level color stack@>=
+#define MAX_COLOR_STACK 256  /* a power of two */
+#define COLOR_STACK_MASK (MAX_COLOR_STACK-1)
+static uint8_t color_stack[MAX_COLOR_STACK];
+static int color_sp=0, color_stack_depth=0;
+static bool possible_break=true;
+
+
+@ Penalties and glue nodes but also baseline skips are possible page breaks.
+
+@<|p| might be a page break@>=
+( type(p)==penalty_node ||
+  type(p)==glue_node ||
+  (type(p)==whatsit_node && subtype(p)==baseline_node))
+
+@ After a possible page break, we need to output the current color
+if a non discardable node shows up. Of course no such output is needed
+if that node is a color change itself.
+
+@<Output the current color if needed@>=
+if (non_discardable(p))
+{ if (color_stack_depth>0 && possible_break)
+  { if (!(type(p)==whatsit_node &&
+            (subtype(p)==color_node || subtype(p)==end_color_node)))
+       hout_color_ref(color_stack[color_sp]);
+  }
+  possible_break=false;
+}
+
+
+@ It remains to organize the color stack.
+There are two possible cases to consider: A \TeX\ file might use
+nested colors on the top level with color nodes and matching end
+color nodes; or alternatively, a \TeX\ file might use color nodes without
+matching |end_color| nodes. Of course a \TeX\ file might also mix both approaches.
+In the first case, a limited nesting level can be assumed and a small
+color stack should suffice. In the second case, even a very large
+color stack will overflow sooner or later. To be as flexible as
+possible, we implement the color stack as a circular buffer.
+It is able to restore colors up to a limited nesting depth, but
+an overflow will not cause big problems.
+
+@<Record the current top level color@>=
+if (type(p)==whatsit_node)
+{ if (subtype(p)==color_node)
+  {  color_stack_depth++;
+     color_sp = (color_sp+1)&COLOR_STACK_MASK;
+     if (color_stack_depth>=MAX_COLOR_STACK)
+     { static bool stackoverflow_printed=false;
+       if (!stackoverflow_printed)
+       { print_err("Overflow of top level color stack");
+	 stackoverflow_printed=true;
+       }
+     }
+     color_stack[color_sp]=color_ref(p);
+  }
+  else if (subtype(p)==end_color_node)
+  { if (color_stack_depth>0)
+    { color_stack_depth--;
+      color_sp = (color_sp-1)&COLOR_STACK_MASK;
+      subtype(p)=color_node;
+      color_ref(p)=color_stack[color_sp];
+    }
+  }
+}
+if (@<|p| might be a page break@>) possible_break=true;
+
+
 @*1 Links, Labels, and Outlines.
 The \HINT\ format knows about labels, links, and outlines.
-When generating a short format \HINT\ file, links are part of
+
+@<Put each...@>=
+primitive("HINTdest", extension, label_node);@/
+@!@:HINTdest\_}{\.{\\HINTdest} primitive@>
+primitive("HINTstartlink", extension, start_link_node);@/
+@!@:HINTstartlink\_}{\.{\\HINTstartlink} primitive@>
+primitive("HINTendlink", extension, end_link_node);@/
+@!@:HINTendlink\_}{\.{\\HINTendlink} primitive@>
+primitive("HINToutline", extension, outline_node);@/
+@!@:HINToutline\_}{\.{\\HINToutline} primitive@>
+
+@ When generating a short format \HINT\ file, links are part of
 the content section, where as labels and outlines are found in
 the definition section. Because labels are defined while
 writing the content section, the writing of labels and outlines
@@ -31025,7 +31638,7 @@ that start links and end links properly match.
 @<Hi\TeX\ auxiliary routines@>=
 static int last_link=-1;
 static int new_start_link(pointer p)
-{ int n=find_label(p);
+{ int n=find_label(as_label(p));
   if (last_link>=0)
     fatal_error("Missing end link before start link");
   labels[n].used=true;
@@ -31076,6 +31689,7 @@ Here is the new |build_page| routine of Hi\TeX:
 @<Hi\TeX\ routines@>=
 static void build_page(void)
 { static bool initial=true;
+  @<Define the top level color stack@>@;
   if(link(contrib_head)==null||output_active)return;
   do
   { pointer p= link(contrib_head);
@@ -31085,6 +31699,7 @@ static void build_page(void)
     int page_penalty=0;
     if (eject) page_penalty=penalty(p);
     @<Record the bottom mark@>@;
+    @<Record the current top level color@>@;
     @<Suppress empty pages if requested@>@;
     link(contrib_head)= link(p);link(p)= null;
     if (link(contrib_head)==null)
@@ -31095,7 +31710,9 @@ static void build_page(void)
     page_goal=0x3fffffff; /* maximum dimension */
     t=collect_output(&p,&q);
     if (p!=null)
-    { hpos0=hpos; hout_node(p); }
+    { hpos0=hpos; hout_node(p);
+      @<Output the current color if needed@>@;
+    }
 recycle_p:
     flush_node_list(p);
     if (q!=null||(eject&&page_contents>=box_there))
@@ -31171,8 +31788,8 @@ if (option_no_empty_page &&
     ((eject && penalty(p)>2*(eject_penalty)) ||
      (page_contents==empty && !is_visible(p))))
 { pointer r, prev_r = p;
-  loop@+{
-    r =link(prev_r);
+  while (true)
+  { r =link(prev_r);
     if (r==null) return;
     else if (is_visible(r)) break;
     else if (type(r)==penalty_node && penalty(r)<=eject_penalty)
@@ -31457,11 +32074,12 @@ if (type(p)==mark_node)
 The following routines extend \TeX's original routines. They check for
 any dependency of the box size on {\tt hsize} or {\tt vsize} and
 create an hset node or hpack node if such a dependency was found.
-
+The |keep_cs| variable will prevent the initialization of the color
+stack; this is needed in the |line_break| routine, where the color
+stack is maintained for the whole paragraph not for the individual lines.
 
 @<Hi\TeX\ routines@>=
-
-static pointer hpack(pointer p,scaled w, scaled hf, scaled vf, small_number m)
+static pointer hpack(pointer p,scaled w, scaled hf, scaled vf, small_number m, bool keep_cs)
 {
   pointer r; /*the box node that will be returned*/
   pointer q; /*trails behind |p|*/
@@ -31473,6 +32091,7 @@ static pointer hpack(pointer p,scaled w, scaled hf, scaled vf, small_number m)
   four_quarters i;  /*font information about a |char_node|*/
   eight_bits hd; /*height and depth indices for a character*/
   bool repack=false; /* whether repacking is necessary */
+  if (!keep_cs) { @<initialize the color stack@>@;}
   last_badness= 0;r= get_node(box_node_size);type(r)= hlist_node;
   subtype(r)= min_quarterword;shift_amount(r)= 0;
   q= r+list_offset;link(q)= p;
@@ -31491,8 +32110,18 @@ then move to the next node@>;
       case glue_node: @<Incorporate glue into the horizontal totals@>@;@+break;
       case kern_node: case math_node: x=x+width(p);@+break;
       case ligature_node: @<Make node |p| look like a |char_node| and |goto reswitch|@>@;
-      case whatsit_node: @<Incorporate the various extended boxes into an hbox@>@;@+break;
+      case whatsit_node: @<Incorporate the various whatsit nodes into an hbox@>@;@+break;
       default:do_nothing;
+      }
+      if (link(p)==null && keep_cs && link_tos!=null)
+      { pointer r;
+        r=get_node(link_node_size);
+	type(r)=whatsit_node; subtype(r)=end_link_node;
+        if (color_link(color_tos)!=null)
+	  color_ref(r)=color_ref(color_link(color_tos));
+        else
+          color_ref(r)=0xFF;
+        link(r)=null; link(p)=r; p=r;
       }
       p= link(p);
     }
@@ -31572,7 +32201,7 @@ reasonable since the boxes that occur in math formulas are often not very
 complicated. | graph_node|s should not be in a horizontal list, and |disp_node|s
 should be only inside |graph_node|s.
 
-@<Incorporate the various extended boxes into an hbox@>=
+@<Incorporate the various whatsit nodes into an hbox@>=
 switch (subtype(p))
 { case par_node: if (depth(p)> d) d=depth(p); break;
   case disp_node:  break;
@@ -31597,16 +32226,18 @@ switch (subtype(p))
       else { repack=true; break;}
     }
     break;
+    @<cases that flatten the color stack@>@;
   default: break;
 }
 
 @ @<Hi\TeX\ routines@>=
-static pointer vpackage(pointer p, scaled h, scaled hf, scaled vf, small_number m, scaled l)
+static pointer vpackage(pointer p, scaled h, scaled hf, scaled vf, small_number m, bool keep_cs, scaled l)
 { pointer r; /*the box node that will be returned*/
   scaled w,d,x; /*width, depth, and natural height*/
   scaled s=0; /*shift amount*/
   pointer g; /*points to a glue specification*/
   glue_ord sho, sto; /*order of infinity*/
+  if (!keep_cs) {@<initialize the color stack@>@;}
   last_badness= 0; r= get_node(box_node_size); type(r)= vlist_node;
   subtype(r)= min_quarterword; shift_amount(r)= 0;
   list_ptr(r)= p;
@@ -31630,36 +32261,34 @@ static pointer vpackage(pointer p, scaled h, scaled hf, scaled vf, small_number 
           case unset_set_node: case unset_pack_node:
               goto repack;
           case whatsit_node:
-            if (subtype(p)==par_node)
-                          { if (depth(p) > d) d=depth(p);
-			    goto repack; }
-			else if (subtype(p)==disp_node )
-			  goto repack;
-			else if (subtype(p)==vpack_node )
-			  goto repack;
-			else if (subtype(p)==hpack_node )
-			  goto repack;
-			else if (subtype(p)==hset_node )
-			  goto repack;
-			else if (subtype(p)==vset_node )
-			  goto repack;
-			else if (subtype(p)==stream_node )
-			  goto repack;
-			else if (subtype(p)==image_node)
-			{ if (image_xwidth(p)!=null)
-                          { pointer r=image_xwidth(p);
-                            if (xdimen_hfactor(r)==0 && xdimen_vfactor(r)==0)
-                            { if (xdimen_width(r)> w) w= xdimen_width(r); }
-                            else goto repack;
-                          }
-                          if (image_xheight(p)!=null)
-                          { pointer r=image_xheight(p);
-                            if (xdimen_hfactor(r)==0 && xdimen_vfactor(r)==0)
-			    {  x= x+d+xdimen_width(r);d=0;}
-                            else goto repack;
-                          }
-			}
-             break;
+	    switch(subtype(p))
+	    { case par_node:
+                if (depth(p) > d) d=depth(p);
+	        goto repack;
+	      case disp_node:
+	      case vpack_node:
+	      case hpack_node:
+	      case hset_node:
+      	      case vset_node:
+      	      case stream_node:
+		goto repack;
+              case image_node:
+	        if (image_xwidth(p)!=null)
+                { pointer r=image_xwidth(p);
+                  if (xdimen_hfactor(r)==0 && xdimen_vfactor(r)==0)
+                  { if (xdimen_width(r)> w) w= xdimen_width(r); }
+                  else goto repack;
+                }
+                if (image_xheight(p)!=null)
+                { pointer r=image_xheight(p);
+                  if (xdimen_hfactor(r)==0 && xdimen_vfactor(r)==0)
+		  {  x= x+d+xdimen_width(r);d=0;}
+                  else goto repack;
+                }
+                break;
+	        @<cases that flatten the color stack@>
+	    }
+            break;
           case glue_node:
             { glue_ord o;
 			  x= x+d;d= 0;
@@ -31974,8 +32603,25 @@ static void hfinish_stream_after_group(void)
   pop_nest();
 }
 @*1 Page Template Definitions.
+These are the primitives needed to implement page templates:
 
-The data describing a page template is stored in a whatsit node with subtype
+@<Put each...@>=
+primitive("HINTsetpage", extension, setpage_node);@/
+@!@:setpage\_}{\.{\\setpage} primitive@>
+
+primitive("HINTstream", extension, stream_node);@/
+@!@:stream\_}{\.{\\stream} primitive@>
+
+primitive("HINTsetstream", extension, setstream_node);@/
+@!@:setstream\_}{\.{\\setstream} primitive@>
+
+primitive("HINTbefore", extension, stream_before_node);@/
+@!@:before\_}{\.{\\before} primitive@>
+
+primitive("HINTafter", extension, stream_after_node);@/
+@!@:after\_}{\.{\\after} primitive@>
+
+@ The data describing a page template is stored in a whatsit node with subtype
 |setpage_node|.
 Given a pointer |p| to such a node, here are the macros used to access the data stored there:
 
@@ -32017,14 +32663,15 @@ static pointer new_setpage_node(uint8_t i, str_number n)
   for (p=link(prev_p); p!=null; prev_p=p,p=link(p))
     if (setpage_id(p)==i) break;
   if (p==null)
-    @<Allocate a new |setpage_node| |p|@>@;
+    @<allocate a new |setpage_node| |p|@>@;
   else
     link(prev_p)=link(p);
   link(p)=link(setpage_head);
   link(setpage_head)=p;
   return p;
 }
-@ @<Allocate a new |setpage_node| |p|@>=
+@
+@<allocate a new |setpage_node| |p|@>=
 { p=get_node(setpage_node_size);type(p)=whatsit_node;subtype(p)=setpage_node;
   setpage_number(p)=max_ref[page_kind]=++max_page;
   setpage_id(p)=i;
@@ -32111,7 +32758,7 @@ static void hint_open(void)
   output_file_name=make_name_string();
   DBG(DBGBASIC,"Output file %s opened\n",(char *)name_of_file+1);
 }
-@#
+
 #define HITEX_VERSION "1.1"
 static void  hput_definitions();
 extern int option_global;
@@ -32269,6 +32916,7 @@ static void hdef_init(void)
   @<Initialize definitions for baseline skips@>@;
   @<Initialize definitions for fonts@>@;
   @<Initialize definitions for labels@>@;
+  @<Initialize definitions for colors@>@;
 #if 0
   overfull_rule=0;    /* no overfull rules please */
 #endif
@@ -32298,6 +32946,7 @@ static void  hput_definitions()
    @<Output baseline skip definitions@>@;
    @<Output parameter list definitions@>@;
    @<Output discretionary break definitions@>@;
+   @<Output color definitions@>@;
    @<Output page template definitions@>@;
    hput_definitions_end();
    hput_range_defs(); /* expects the definitions section to be ended */
@@ -32326,7 +32975,7 @@ but we will need it repeatedly in the function |hdef_param_node| and the overhea
 not warrant having the mapping in both directions.
 
 @<Hi\TeX\ variables@>=
-static const int hmap_int[] ={@t\1\1@>@/
+static const int hmap_int[] ={@/
 pretolerance_no,  /* |pretolerance_code| 0 */
 tolerance_no,  /* |tolerance_code| 1 */
 line_penalty_no,  /* |line_penalty_code| 2 */
@@ -32369,7 +33018,7 @@ year_no,  /* |year_code| 23 */
 -1,  /* |output_penalty_code| 39 */
 -1,  /* |max_dead_cycles_code| 40 */
 hang_after_no,  /* |hang_after_code| 41*/
-@t\2\2@> floating_penalty_no  /* |floating_penalty_code| 42*/
+floating_penalty_no  /* |floating_penalty_code|	42*/
 };
 
 
@@ -32381,7 +33030,7 @@ hang_after_no,  /* |hang_after_code| 41*/
     if ( hmap_int[i]>=0) int_defined[hmap_int[i]]=int_par(i);
   max_ref[int_kind]=MAX_INT_DEFAULT;
 @ The function |hget_int_no| tries to allocate a predefined integer number;
-if not successful, it returns~$-1$.
+if not successful, it returns $-1$.
 
 @<Hi\TeX\ auxiliary routines@>=
 static int hget_int_no(int32_t n)
@@ -32424,7 +33073,7 @@ We proceed as we did for integers, starting with the array that holds the define
 @<Hi\TeX\ variables@>=
 static scaled dimen_defined[0x100]={0};
 @ @<Hi\TeX\ variables@>=
-static const int hmap_dimen[] ={@t\1\1@>@/
+static const int hmap_dimen[] ={@/
   -1, /* |par_indent_code| 0 */
   -1,  /* |math_surround_code| 1 */
   line_skip_limit_no,  /* |line_skip_limit_code| 2 */
@@ -32445,7 +33094,7 @@ static const int hmap_dimen[] ={@t\1\1@>@/
   hang_indent_no,  /* |hang_indent_code| 17 */
   -1, /* |h_offset_code| 18 */
   -1,  /* |v_offset_code| 19 */
-  @t\2\2@> emergency_stretch_no /* |emergency_stretch_code| 20 */
+  emergency_stretch_no /* |emergency_stretch_code| 20 */
 };
 @ @<Fix definitions for dimension parameters@>=
   dimen_defined[zero_dimen_no]=0;
@@ -32551,7 +33200,8 @@ glue specifications and often a simple comparison of pointers might suffice.
 @<Hi\TeX\ variables@>=
 static pointer glue_defined[0x100];
 @ @<Hi\TeX\ variables@>=
-static int hmap_glue[] ={@t\1\1@>@/
+static int hmap_glue[] ={
+
 line_skip_no,  /* |line_skip_code| 0 */
 baseline_skip_no,  /* |baseline_skip_code| 1 */
 -1,  /* |par_skip_code| 2 */
@@ -32566,7 +33216,7 @@ split_top_skip_no,  /* |split_top_skip_code| 10 */
 tab_skip_no,  /* |tab_skip_code| 11 */
 -1,  /* |space_skip_code| 12 */
 -1,  /* |xspace_skip_code| 13 */
-@t\2\2@> par_fill_skip_no  /* |par_fill_skip_code| 14 */
+par_fill_skip_no  /* |par_fill_skip_code| 14 */
 };
 @ @<Fix definitions for glue parameters@>=
   glue_defined[zero_skip_no]=zero_glue; incr(glue_ref_count(zero_glue));
@@ -32818,8 +33468,8 @@ static bool node_equal(pointer p, pointer q)
 }
 
 static bool list_equal(pointer p, pointer q)
-{@+loop@+{
-    if (p==q) return true;
+{@+while (true)
+  { if (p==q) return true;
     if (p==null || q==null) return false;
     if (!node_equal(p,q)) return false;
     p=link(p);q=link(q);
@@ -34009,6 +34659,7 @@ case start_link_node:
   int n=new_start_link(p);
   i=b010;
   if (n>0xFF) { i|=b001; HPUT16(n);@+} @+else HPUT8(n);
+  if (color_ref(p)!=1) {i|=b100; HPUT8(color_ref(p)); }
   tag= TAG(link_kind,i);
 }
 break;
@@ -34017,14 +34668,19 @@ case end_link_node:
   int n=new_end_link();
   i=b000;
   if (n>0xFF) { i|=b001; HPUT16(n);@+} @+else HPUT8(n);
+  if (color_ref(p)!=0xFF) {i|=b100; HPUT8(color_ref(p)); }
   tag= TAG(link_kind,i);
 }
 break;
 case outline_node: hpos--; new_outline(p);  return;
 
 @*1 Images.
-\indent
-@<cases to output whatsit content nodes@>=
+There is a single primitive to handle images:
+@<Put each...@>=
+primitive("HINTimage", extension, image_node);@/
+@!@:HINTimage\_}{\.{\\HINTimage} primitive@>
+
+@ @<cases to output whatsit content nodes@>=
      case image_node:
         { Xdimen w={0},h={0}; List d; uint32_t pos;
           if (image_xwidth(p)!=null)
@@ -34397,7 +35053,7 @@ static const char *option_mfmode="ljfour", *option_dpi_str="600";
 extern int option_compress;
 extern unsigned int debugflags;
 
-static struct option long_options[] = {@t\1\1@>@/
+static struct option long_options[] = {@/
       { "help",                      0, 0, 0 },@/
       { "version",                   0, 0, 0 },@/
       { "interaction",               1, 0, 0 },@/
@@ -34428,8 +35084,8 @@ static struct option long_options[] = {@t\1\1@>@/
       { "hint-debug",                1, 0, 0 },@/
       { "hint-debug-help",           0, 0, 0 },@/
 #endif
-@t\2\2@> { 0, 0, 0, 0 } @/
-};
+      { 0, 0, 0, 0 }@+}@+;
+
 
 @ Parsing the command line options is accomplished with the
 |parse_options| function which in turn uses the |getopt_long_only|
@@ -34438,7 +35094,7 @@ function from the \CEE/ library. This function returns 0 and sets the
 the end of all options is reached.
 @<\TeX\ Live  functions@>=
 static void parse_options (int argc, char *argv[])
-{@+ loop @+ {
+{@+ while (true) {
     int option_index;
     int g = getopt_long_only (argc, argv, "+", long_options, &option_index);
     if (g==0)
@@ -34488,7 +35144,7 @@ the option structure.
 #include <kpathsea/kpathsea.h>
 static int argument_is(struct option *opt, char * s)
 {@+ return STREQ(opt->name, s); @+}
-#define ARGUMENT_IS(S) @[argument_is(long_options+option_index,S)@]
+#define ARGUMENT_IS(S) argument_is(long_options+option_index,S)
 
 @ Now we can handle the first two options:
 
@@ -35111,7 +35767,7 @@ last=first;
 while (optind < argc) input_add_str(argv[optind++]);
 loc=first;
 return (loc < last);
-}
+@+ }
 
 @ @<Forward declarations@>=
 static int input_command_line(void);
@@ -35169,9 +35825,8 @@ static bool b_open_out(byte_file *f)  /*open a binary file for output*/
 {@+f->f=open_out((char *)name_of_file+1,"wb");
 return f->f!=NULL && ferror(f->f)==0;@+
 }
-@#
+
 #ifdef @!INIT
-@+@t}\6\4\4{@>
 static bool w_open_out(word_file *f)  /*open a word file for output*/
 {@+f->f=open_out((char *)name_of_file+1,"wb");
    return f->f!=NULL && ferror(f->f)==0;@+
@@ -35359,8 +36014,6 @@ static int get_md5_sum(int s, int file);
 @ The code that follows was taken from the \.{texmfmp.c} file of
 the \TeX\ Live distribution and slightly modified.
 
-@s md5_byte_t int
-@s md5_state_t int
 
 @<\TeX\ Live auxiliary functions@>=
 
@@ -35419,16 +36072,16 @@ make_time_str(time_t t, bool utc)
 static void get_creation_date(void)
 { make_time_str(start_time,source_date_epoch!=NULL);
 }
-@#
-#ifdef WIN32
+
 /* static structure for file status set by |find_input_file| */
-@+@t}\6{@>
+#ifdef WIN32
 static    struct _stat file_stat;
-#define GET_FILE_STAT @[_stat(fname,&file_stat)@]
+#define GET_FILE_STAT _stat(fname,&file_stat)
 #else
 static     struct stat file_stat;
-#define GET_FILE_STAT @[stat(fname,&file_stat)@]
+#define GET_FILE_STAT stat(fname,&file_stat)
 #endif
+
 
 static char* find_input_file(void)
 { char *fname;

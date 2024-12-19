@@ -1,3 +1,99 @@
+2024-12-01  Karl Berry  <karl@freefriends.org>
+
+	* tex.ch (error): do @<Put help message on the transcript file@>
+	before exiting if halt_on_error_p, to be closer to behavior of TeX
+	without -halt-on-error. Suggestion from jfbu:
+	https://tug.org/pipermail/tex-live/2024-July/050741.html
+
+2024-11-24  David Fuchs  <drfuchs@yahoo.com>
+
+	* tex.ch (Initialize the input routines): also initialize
+	buffer[0]:=0 for uninitialized virtex read, in the
+	cases of printing garbage fixed by Kitagawa-san on 2021-07-19.
+
+2024-11-13  Karl Berry  <karl@freefriends.org>
+
+	* mf.ch (Calculate integers $\alpha$...): comment out erroneous
+	change that "simplified" the assignment of alpha, resulting in a
+	few pen polygons being affected, but don't know if any extant
+	fonts are impacted. Report from Tim Stadelman,
+	https://tug.org/pipermail/tex-k/2021-August/003648.html.
+
+2024-10-20  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* lib/texmfmp.c (maininit): Support ofm in {,e}upTeX.
+	https://github.com/texjporg/tex-jp-build/issues/170
+	* tests/eu3-lmr10.{ofm,ovf,ovp}, tests/eu3-lmr10_eu3.ovf,
+	tests/eu3-lmr10_ucs.{ofm,ovp}, tests/lm-{ec,texnansi}.enc,
+	tests/lmr10.pfb, tests/texnansi-lmr10.tfm,
+	tests/uctt10x.{opl,ofm,ovp,ovf}, am/web.am:
+	Add for tests of upTeX and OFM.
+
+2024-09-16  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* tests/ec-lmr10.tfm, tests/dump-basic.tex:
+	Add for tests of pTeX family
+
+2024-09-07  Karl Berry  <karl@freefriends.org>
+
+	* Makefile.am (texprof.am): include.
+	* ac/web2c.ac (kpse_tex_progs) <texprof>: new entry in table.
+
+2024-09-06  Andreas Scherer  <https://ascherer.github.io>
+
+	* weav-twill.ch,
+	* weave.ch: Sort section names in TWILL.
+
+2024-09-02  Andreas Scherer  <https://ascherer.github.io>
+
+	* bibtex.ch,
+	* dvitype.ch,
+	* gftodvi.ch,
+	* gftopk.ch,
+	* gftype.ch,
+	* mft.ch,
+	* pktype.ch,
+	* pltotf.ch,
+	* pooltype.ch,
+	* tangle.ch,
+	* tftopl.ch,
+	* vftovp.ch,
+	* vptovf.ch,
+	* weave.ch: Flip two section names in the index.
+	* dvicopy.ch,
+	* dvicopy.web,
+	* patgen.ch,
+	* patgen.web,
+	* pktogf.ch,
+	* pktogf.web: Fix sorting order in 'other' WEB codees.
+
+2024-08-31  Andreas Scherer  <https://ascherer.github.io>
+
+	* vftovp.ch: Fix sorting order of new named sections.
+
+2024-08-23  Andreas Scherer  <https://ascherer.github.io>
+
+	* gftopk.ch,
+	* gftype.ch,
+	* pktogf.ch,
+	* pktype.ch: Fix a few spaces.
+
+2024-08-21  Andreas Scherer  <https://ascherer.github.io>
+
+	* weav-twill.ch: Prime the title page.
+
+2024-08-16  Andreas Scherer  <https://ascherer.github.io>
+
+	* showstream.ch: Restore section numbering as far as possible.
+
+2024-08-12  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctangleboot.cin: CWEB 4.12 release.
+
+2024-07-14  Andreas Scherer  <https://ascherer.github.io>
+
+	* mft.ch: Preserve Metafont logo on title page.
+
 2024-06-28  Andreas Scherer  <https://ascherer.github.io>
 
 	* cwebdir/ctwill-w2c.ch,

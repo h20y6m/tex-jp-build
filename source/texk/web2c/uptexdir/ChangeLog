@@ -1,3 +1,55 @@
+2024-10-20  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* uptex-m.ch, uptex.defines, kanji.{c,h}:
+	Support Latin Unicode and 16bit OFM Level-0.
+	Implement new kcatcode (latin_ucs(14)).
+	* updvitype.ch: Support 16bit OFM Level-0.
+	* uptex-{ofm,lmr,noto}.test, tests/lmr{1,2}.tex,
+	tests/noto1.tex, tests/up-ofm.tex, tests/up-prim.tex,
+	tests/up-lmr{1,2}.log, tests/up-noto1.log,
+	tests/up-ofm.log, tests/up-ofma.typ, tests/up-prim.log,
+	am/uptex.am: Update tests.
+	* uptex-m.ch, upbibtex.ch, uptex_version.h:
+	upTeX version u2.00.
+	https://github.com/texjporg/tex-jp-build/issues/170
+
+2024-10-12  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* uptex-prim.test, tests/up-prim.{tex,log},
+	am/uptex.am: Add a test.
+	* uptex-m.ch: revision date.
+	* COPYRIGHT.ja: copyright year.
+
+2024-09-30  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* uptex-m.ch: kcatcode (latin_ucs(14)) is removed
+	since it will be supported in upTeX-2.00.
+
+2024-09-28  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* uptex-m.ch, upbibtex.ch, kanji.c:
+	Update reference of Unicode blocks to
+	"Blocks-16.0.0.txt Date: 2024-02-22".
+	Also add a new block
+	"CJK Unified Ideographs Extension J"
+	which is approved in Unicode 17.0, 2025.
+	* tests/unibib.{tex,bib,bbl}: Update a test.
+
+2024-09-22  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* ptex-base.ch, ptex_version.h: Version p4.1.2.
+
+2024-09-21  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* ptex-base.ch, uptex-m.ch:
+	Fix a bug in initialization of inhibit_xsp/kinsoku tables
+	(Bug introduced on commit 2022-12-12 r65248).
+
+2024-09-16  TANAKA Takuji  <ttk@t-lab.opal.ne.jp>
+
+	* ptex-base.ch: Use constants enc_jis and enc_ucs.
+	* am/uptex.am: Tweak.
+
 2024-05-18  Hironori Kitagawa  <h_kitagawa2001@yahoo.co.jp>
 
 	* ptex-base.ch: Enable to get character codes
