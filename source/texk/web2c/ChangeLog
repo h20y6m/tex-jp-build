@@ -1,3 +1,12 @@
+2025-01-01  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctangleboot.cin: CWEB 4.12.1 release.
+
+2024-12-01  Luigi Scarso  <luigi.scarso@gmail.com>
+
+	* doc/luatex: development LuaTeX Reference Manual, kept in sync with
+	the current version of LuaTeX.
+
 2024-12-01  Karl Berry  <karl@freefriends.org>
 
 	* tex.ch (error): do @<Put help message on the transcript file@>
