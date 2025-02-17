@@ -290,13 +290,16 @@ character(p):=c; lig_ptr(p):=null;
 @d kcat_code_base=cat_code_base+256
   {table of 256 command codes for the wchar's catcodes }
 @d auto_xsp_code_base=kcat_code_base+256 {table of 256 auto spacer flag}
+@d inhibit_xsp_code_base=auto_xsp_code_base+256
 @y
 @d enable_cjk_token_code=auto_xspacing_code+1
 @d cat_code_base=enable_cjk_token_code+1
   {table of |max_latin_val| command codes (the ``catcodes'')}
 @d kcat_code_base=cat_code_base+max_latin_val
   {table of 512 command codes for the wchar's catcodes }
-@d auto_xsp_code_base=kcat_code_base+512 {table of 256 auto spacer flag}
+@d auto_xsp_code_base=kcat_code_base+512
+  {table of |max_latin_val| auto spacer flag}
+@d inhibit_xsp_code_base=auto_xsp_code_base+max_latin_val
 @z
 
 @x
@@ -328,22 +331,19 @@ for k:=0 to 255 do
   begin cat_code(k):=other_char; kcat_code(k):=other_kchar;
   math_code(k):=hi(k); sf_code(k):=1000;
   auto_xsp_code(k):=0;
-  inhibit_xsp_type(k):=0; kinsoku_type(k):=0;
   end;
 @y
 eqtb[auto_xspacing_code]:=eqtb[cat_code_base];
 eqtb[enable_cjk_token_code]:=eqtb[cat_code_base];
 for k:=0 to 255 do
-  begin cat_code(k):=other_char;
-  math_code(k):=hi(k);
+  begin math_code(k):=hi(k);
+  end;
+for k:=0 to max_latin_val-1 do
+  begin cat_code(k):=other_char; sf_code(k):=1000;
   auto_xsp_code(k):=0;
-  inhibit_xsp_type(k):=0; kinsoku_type(k):=0;
   end;
 for k:=0 to 511 do
   begin kcat_code(k):=other_kchar;
-  end;
-for k:=0 to max_latin_val-1 do
-  begin sf_code(k):=1000;
   end;
 @z
 
@@ -495,6 +495,18 @@ kchar_num: print_esc("kchar");
 @z
 
 @x
+procedure show_token_list(@!p,@!q:integer;@!l:integer);
+label exit;
+var m,@!c:integer; {pieces of a token}
+@!match_chr:ASCII_code; {character used in a `|match|'}
+@y
+procedure show_token_list(@!p,@!q:integer;@!l:integer);
+label exit;
+var m,@!c:integer; {pieces of a token}
+@!match_chr:0..max_latin_val; {character used in a `|match|'}
+@z
+
+@x
   if check_kanji(info(p)) then {|wchar_token|}
     begin m:=kcat_code(kcatcodekey(info(p))); c:=info(p);
     end
@@ -520,13 +532,50 @@ case m of
 kanji,kana,other_kchar: print_kanji(KANJI(c));
 left_brace,right_brace,math_shift,tab_mark,sup_mark,sub_mark,spacer,
   letter,other_char: print(c);
+mac_param: begin print(c); print(c);
+  end;
+out_param: begin print(match_chr);
+  if c<=9 then print_char(c+"0")
+  else  begin print_char("!"); return;
+    end;
+  end;
+match: begin match_chr:=c; print(c); incr(n); print_char(n);
+  if n>"9" then return;
+  end;
 @y
 @<Display the token ...@>=
 case m of
 kanji,kana,other_kchar,hangul,modifier: print_kanji(KANJI(c));
 left_brace,right_brace,math_shift,tab_mark,sup_mark,sub_mark,spacer,
-  letter,other_char: if (check_echar_range(c)=1)or((c>255)and(c<max_latin_val))
+  letter,other_char: if (check_echar_range(c)=1)or(check_mchar_range(c))
     then print_kanji(KANJI(c)) else print(c);
+mac_param: begin if (check_echar_range(c)=1)or(check_mchar_range(c))
+    then begin print_kanji(KANJI(c)); print_kanji(KANJI(c)); end
+    else begin print(c); print(c); end
+  end;
+out_param: begin
+  if (check_echar_range(match_chr)=1)or(check_mchar_range(match_chr))
+    then print_kanji(KANJI(match_chr)) else print(match_chr);
+  if c<=9 then print_char(c+"0")
+  else  begin print_char("!"); return;
+    end;
+  end;
+match: begin match_chr:=c;
+  if (check_echar_range(c)=1)or(check_mchar_range(c))
+    then print_kanji(KANJI(c)) else print(c);
+  incr(n); print_char(n);
+  if n>"9" then return;
+  end;
+@z
+
+@x
+@d chr_cmd(#)==begin print(#); print_ASCII(chr_code);
+  end
+@y
+@d chr_cmd(#)==begin print(#);
+   if chr_code < @"100 then print_ASCII(chr_code)
+   else print_kanji(chr_code);
+  end
 @z
 
 @x
@@ -654,8 +703,8 @@ hangul_code(mid_kanji):
 @x
   begin c:=buffer[loc+1]; @+if c<@'200 then {yes we have an expanded char}
 @y
-  begin if (cur_chr=buffer[loc+1]) and (cur_chr=buffer[loc+2]) and
-           ((loc+6)<=limit) then
+  begin if (isinternalUPTEX) and ((loc+6)<=limit) and
+           (cur_chr=buffer[loc+1]) and (cur_chr=buffer[loc+2]) then
      begin c:=buffer[loc+3]; cc:=buffer[loc+4];
        cd:=buffer[loc+5]; ce:=buffer[loc+6];
        if is_hex(c) and is_hex(cc) and is_hex(cd) and is_hex(ce) then
@@ -748,8 +797,10 @@ if cat=other_kchar then decr(k); {now |k| points to first nonletter}
 @y
 until not((cat=letter)or(cat=kanji)or(cat=kana)or(cat=hangul)or(cat=modifier))or(k>limit);
 {@@<If an expanded...@@>;}
-if not((cat=letter)or(cat=kanji)or(cat=kana)or(cat=hangul)or(cat=modifier)) then decr(k);
-if cat=other_kchar then k:=k-multilenbuffchar(cur_chr)+1; {now |k| points to first nonletter}
+if not((cat=letter)or(cat=kanji)or(cat=kana)or(cat=hangul)or(cat=modifier)) then begin
+  if (buffer2[k-1]) then k:=k-multilenbuffchar(cur_chr)
+  else decr(k);
+  end; {now |k| points to first nonletter}
 @z
 
 @x
@@ -784,8 +835,10 @@ if cat=other_kchar then k:=k-multilenbuffchar(cur_chr)+1; {now |k| points to fir
       cur_tok:=(kanji_ivs*max_cjk_val)+cur_chr
     else
       cur_tok:=(cur_cmd*max_cjk_val)+cur_chr
-  else if (cur_cmd=latin_ucs)or(check_echar_range(cur_chr)=1) then
+  else if (cur_cmd=latin_ucs) then
       cur_tok:=(cat_code(cur_chr)*max_cjk_val)+cur_chr
+  else if (check_echar_range(cur_chr)=1) then
+      cur_tok:=(cur_cmd*max_cjk_val)+cur_chr
   else cur_tok:=(cur_cmd*max_char_val)+cur_chr
 @z
 
@@ -825,8 +878,10 @@ if cat=other_kchar then k:=k-multilenbuffchar(cur_chr)+1; {now |k| points to fir
       cur_tok:=(kanji_ivs*max_cjk_val)+cur_chr
     else
       cur_tok:=(cur_cmd*max_cjk_val)+cur_chr
-  else if (cur_cmd=latin_ucs)or(check_echar_range(cur_chr)=1) then
+  else if (cur_cmd=latin_ucs) then
       cur_tok:=(cat_code(cur_chr)*max_cjk_val)+cur_chr
+  else if (check_echar_range(cur_chr)=1) then
+      cur_tok:=(cur_cmd*max_cjk_val)+cur_chr
   else cur_tok:=(cur_cmd*max_char_val)+cur_chr
 @z
 
@@ -840,9 +895,17 @@ if cat=other_kchar then k:=k-multilenbuffchar(cur_chr)+1; {now |k| points to fir
       cur_tok:=(kanji_ivs*max_cjk_val)+cur_chr
     else
       cur_tok:=(cur_cmd*max_cjk_val)+cur_chr
-  else if (cur_cmd=latin_ucs)or(check_echar_range(cur_chr)=1) then
+  else if (cur_cmd=latin_ucs) then
       cur_tok:=(cat_code(cur_chr)*max_cjk_val)+cur_chr
+  else if (check_echar_range(cur_chr)=1) then
+      cur_tok:=(cur_cmd*max_cjk_val)+cur_chr
   else cur_tok:=(cur_cmd*max_char_val)+cur_chr
+@z
+
+@x
+if (info(r)>match_token+255)or(info(r)<match_token) then s:=null
+@y
+if (info(r)>=match_token+max_latin_val)or(info(r)<match_token) then s:=null
 @z
 
 @x
@@ -2598,4 +2661,11 @@ if (c>127)and(c<max_latin_val)and(kcat_code(kcatcodekey(c))=latin_ucs)then
 else if (c>=0)and(c<256)then
   check_echar_range:=2
 else check_echar_range:=0;
+end;
+
+function check_mchar_range(@!c:integer):integer;
+begin
+if (c>255)and(c<max_latin_val)then
+  check_mchar_range:=1
+else check_mchar_range:=0;
 @z
