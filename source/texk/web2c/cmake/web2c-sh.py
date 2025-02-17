@@ -119,21 +119,21 @@ def run(args, input):
 
 
 def cvtbib_sed(lines):
-    lines = sed_match_append_line_2(lines, '#include "cpascal\.h"',
-                                    '#include <setjmp\.h>\n',
-                                    'jmp_buf jmp9998, jmp32; int lab31=0;\n')
-    lines = sed_match_append_line_2(lines, '#include "u*ptexdir/kanji\.h"',
+    lines = sed_match_append_line_2(lines, r'#include "cpascal\.h"',
                                     '#include <setjmp.h>\n',
                                     'jmp_buf jmp9998, jmp32; int lab31=0;\n')
-    lines = sed_sub(lines, 'goto lab31 ; *', '{lab31=1; return;}')
-    lines = sed_sub(lines, 'goto lab32', 'longjmp(jmp32,1)')
-    lines = sed_sub_g(lines, 'goto lab9998', 'longjmp(jmp9998,1)')
-    lines = sed_sub(lines, 'lab31:', '')
-    lines = sed_sub(lines, 'lab32:', '')
-    lines = sed_sub(lines, 'hack0 \(\) ;', 'if(setjmp(jmp9998)==1) goto lab9998;')
-    lines = sed_sub(lines, 'hack1 \(\) ;', 'if(setjmp(jmp32)==0)for(;;)')
-    lines = sed_sub(lines, 'hack2 \(\)', 'break')
-    lines = sed_sub_after(lines, '^void mainbody', 'while \( true', 'while (lab31==0')
+    lines = sed_match_append_line_2(lines, r'#include "u*ptexdir/kanji\.h"',
+                                    '#include <setjmp.h>\n',
+                                    'jmp_buf jmp9998, jmp32; int lab31=0;\n')
+    lines = sed_sub(lines, r'goto lab31 ; *', '{lab31=1; return;}')
+    lines = sed_sub(lines, r'goto lab32', 'longjmp(jmp32,1)')
+    lines = sed_sub_g(lines, r'goto lab9998', 'longjmp(jmp9998,1)')
+    lines = sed_sub(lines, r'lab31:', '')
+    lines = sed_sub(lines, r'lab32:', '')
+    lines = sed_sub(lines, r'hack0 \(\) ;', 'if(setjmp(jmp9998)==1) goto lab9998;')
+    lines = sed_sub(lines, r'hack1 \(\) ;', 'if(setjmp(jmp32)==0)for(;;)')
+    lines = sed_sub(lines, r'hack2 \(\)', 'break')
+    lines = sed_sub_after(lines, r'^void mainbody', r'while \( true', 'while (lab31==0')
     return lines
 
 
